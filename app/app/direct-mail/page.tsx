@@ -100,6 +100,57 @@ function isRecentlyMailed(recent: RecentMail | undefined) {
   return Boolean(recent);
 }
 
+type PreviewCost = {
+  template: string;
+  format: string;
+  estimated_per_piece_cost_cents: number;
+  estimated_total_cost_cents: number;
+};
+
+function moneyFromCents(cents: number) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
+}
+
+function PostcardPreview({
+  sender,
+  member,
+  recipientCount,
+  cost,
+  error,
+  loading,
+  onBack,
+  onRetry,
+}: {
+  sender: SenderSettings;
+  member: CohortMember;
+  recipientCount: number;
+  cost: PreviewCost | null;
+  error: string;
+  loading: boolean;
+  onBack: () => void;
+  onRetry: () => void;
+}) {
+  const opportunity = member.opportunity;
+  const name = recipientName(opportunity);
+  const address = `${opportunity.address}, ${opportunity.property_city}, TX ${opportunity.property_zip}`;
+  return (
+    <section className="postcard-preview" aria-busy={loading}>
+      <div className="builder-toolbar"><div><p className="eyebrow">POSTCARD PREVIEW · ONE STANDARD DESIGN</p><h2>Review your postcard</h2><p>This preview uses the first selected recipient. Personalization will apply to each selected property.</p></div><button className="secondary-button" onClick={onBack}>← Back to recipients</button></div>
+      {loading ? <div className="direct-mail-state" role="status">Preparing preview…</div> : error ? <div className="direct-mail-state direct-mail-error" role="alert"><strong>{error}</strong><button className="secondary-button" onClick={onRetry}>Try again</button></div> : cost ? (
+        <>
+          <div className="preview-summary"><div><span className="stat-label">SELECTED RECIPIENTS</span><strong>{recipientCount}</strong></div><div><span className="stat-label">ESTIMATED COST</span><strong>{moneyFromCents(cost.estimated_total_cost_cents)}</strong><span>Estimated · {moneyFromCents(cost.estimated_per_piece_cost_cents)} each</span></div></div>
+          <div className="postcard-preview-grid">
+            <div className="postcard-face"><div className="postcard-face-label">FRONT · {cost.format}</div><div className="postcard-front"><span className="postcard-mark">{sender.name}</span><h3>Comfort, without the wait.</h3><p>A local HVAC team for repairs, tune-ups, and replacement conversations.</p><strong>Call {sender.phone}</strong></div></div>
+            <div className="postcard-face"><div className="postcard-face-label">BACK · {cost.format}</div><div className="postcard-back"><div><strong>{name}</strong><span>{address}</span></div><div className="postcard-message"><strong>Your home deserves dependable comfort.</strong><p>If your heating or cooling system needs attention, we’re here to help with straightforward service from a local team.</p><strong>Call {sender.phone}</strong>{sender.website && <span>{sender.website}</span>}</div><div className="postcard-return"><span>Return address</span><strong>{sender.name}</strong><span>{sender.address1}{sender.address2 ? `, ${sender.address2}` : ""}</span><span>{sender.city}, {sender.state} {sender.zip}</span></div></div></div>
+          </div>
+          <div className="preview-recipient"><div><span className="stat-label">EXAMPLE RECIPIENT</span><strong>{name}</strong><span>{address}</span></div><span>Physical property address only</span></div>
+          <div className="preview-next-step"><div><strong>Sending comes next</strong><span>This is a local preview. M7-3 will add the confirmed send flow.</span></div><button className="primary-button" disabled>Send campaign — available next</button></div>
+        </>
+      ) : null}
+    </section>
+  );
+}
+
 function DirectMailNav({ router, workspaceName }: { router: ReturnType<typeof useRouter>; workspaceName: string }) {
   return (
     <aside className="sidebar">
@@ -135,6 +186,10 @@ export default function DirectMailPage() {
   const [sender, setSender] = useState<SenderSettings | null>(null);
   const [workspaceName, setWorkspaceName] = useState("Dallas contractor workspace");
   const [recentMail, setRecentMail] = useState<Record<string, RecentMail>>({});
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState("");
+  const [previewCost, setPreviewCost] = useState<PreviewCost | null>(null);
 
   const loadBuilder = useCallback(async () => {
     if (!supabase) return;
@@ -223,6 +278,41 @@ export default function DirectMailPage() {
     });
   };
 
+  const openPreview = async () => {
+    if (!senderIsComplete || selectedMembers.length === 0 || !sender) return;
+    setPreviewLoading(true);
+    setPreviewError("");
+    setPreviewOpen(true);
+    try {
+      const response = await fetch("/api/direct-mail/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          sender,
+          recipients: selectedMembers.map(({ opportunity }) => ({
+            name: recipientName(opportunity),
+            address: opportunity.address,
+            city: opportunity.property_city,
+            state: "TX",
+            zip: opportunity.property_zip,
+          })),
+        }),
+      });
+      const payload = await response.json() as PreviewCost & { error?: string };
+      if (response.status === 401) {
+        router.push("/login");
+        return;
+      }
+      if (!response.ok) throw new Error(payload.error || "Postcard preview could not be prepared.");
+      setPreviewCost(payload);
+    } catch (previewLoadError) {
+      setPreviewError(previewLoadError instanceof Error ? previewLoadError.message : "Postcard preview could not be prepared.");
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   return (
     <div className="app-frame">
       {supabase && <DirectMailNav router={router} workspaceName={workspaceName} />}
@@ -245,7 +335,7 @@ export default function DirectMailPage() {
             <section className="campaign-builder" aria-busy={loading}>
               <div className="builder-toolbar"><div><p className="eyebrow">NEW CAMPAIGN · CURRENT WEEK ONLY</p><h2>Choose homes to mail</h2><p>Select from the persisted This Week cohort. Selection stays on this device until postcard preview is available.</p></div><button className="secondary-button" onClick={() => { setBuilderOpen(false); setSelectedIds(new Set()); }}>Back to campaigns</button></div>
 
-              {loading ? <div className="direct-mail-state" role="status">Loading this week’s prospects…</div> : error ? <div className="direct-mail-state direct-mail-error" role="alert"><strong>{error}</strong><button className="secondary-button" onClick={() => void loadBuilder()}>Try again</button></div> : reason === "NO_SERVICE_AREA" ? <div className="direct-mail-state" role="status"><strong>No service area configured</strong><span>Set up your territory before choosing homes for a mailing.</span><button className="secondary-button" onClick={() => router.push("/settings")}>Set up territory →</button></div> : !cohort ? <div className="direct-mail-state" role="status"><strong>No current weekly list</strong><span>Open This Week to generate the current prospect list before creating a mailing.</span><button className="secondary-button" onClick={() => router.push("/")}>Open This Week →</button></div> : (
+              {loading ? <div className="direct-mail-state" role="status">Loading this week’s prospects…</div> : error ? <div className="direct-mail-state direct-mail-error" role="alert"><strong>{error}</strong><button className="secondary-button" onClick={() => void loadBuilder()}>Try again</button></div> : reason === "NO_SERVICE_AREA" ? <div className="direct-mail-state" role="status"><strong>No service area configured</strong><span>Set up your territory before choosing homes for a mailing.</span><button className="secondary-button" onClick={() => router.push("/settings")}>Set up territory →</button></div> : !cohort ? <div className="direct-mail-state" role="status"><strong>No current weekly list</strong><span>Open This Week to generate the current prospect list before creating a mailing.</span><button className="secondary-button" onClick={() => router.push("/")}>Open This Week →</button></div> : previewOpen && sender ? <PostcardPreview sender={sender} member={selectedMembers[0]} recipientCount={selectedMembers.length} cost={previewCost} error={previewError} loading={previewLoading} onBack={() => setPreviewOpen(false)} onRetry={() => void openPreview()} /> : (
                 <>
                   {!senderIsComplete && <div className="sender-warning" role="status"><div><strong>Complete your return address before postcard preview.</strong><span>Direct Mail uses your business sender identity. You can still review and select homes now.</span></div><button className="secondary-button" onClick={() => router.push("/settings")}>Open Settings →</button></div>}
                   <div className="builder-summary"><div><span className="stat-label">SELECTED RECIPIENTS</span><strong>{selectedMembers.length}</strong></div><span>{members.length} homes in this week’s cohort</span></div>
@@ -263,7 +353,7 @@ export default function DirectMailPage() {
                     })}
                   </div>
                   <section className="recipient-review" aria-labelledby="recipient-review-heading"><div className="recipient-review-heading"><div><p className="eyebrow">REVIEW</p><h3 id="recipient-review-heading">Selected recipients: {selectedMembers.length}</h3></div><span>Physical property address only</span></div>{selectedMembers.length ? <div className="recipient-review-list">{selectedMembers.map((member) => { const opportunity = member.opportunity; const recent = recentMail[opportunity.id]; return <div className="recipient-review-row" key={member.id}><div><strong>{recipientName(opportunity)}</strong><span>{opportunity.address}, {opportunity.property_city}, TX {opportunity.property_zip}</span></div><div className="recipient-review-meta"><span className={`priority-label priority-${priorityTone(opportunity.opportunity_strength)}`}>{priorityLabel(opportunity.opportunity_strength)}</span>{isRecentlyMailed(recent) && <span className="recent-mail-warning">Mailed recently</span>}</div></div>; })}</div> : <p className="recipient-review-empty">Select homes above to review the intended recipients.</p>}</section>
-                  <div className="builder-next-step"><div><strong>Postcard preview comes next</strong><span>Selection and recipient review are ready for M7-2. No campaign or recipient records have been created.</span></div><button className="primary-button" disabled={!senderIsComplete || selectedMembers.length === 0}>Continue to postcard <span aria-hidden="true">→</span></button></div>
+                  <div className="builder-next-step"><div><strong>Postcard preview comes next</strong><span>Selection and recipient review are ready. No campaign or recipient records have been created.</span></div><button className="primary-button" disabled={!senderIsComplete || selectedMembers.length === 0 || previewLoading} onClick={() => void openPreview()}>Continue to postcard <span aria-hidden="true">→</span></button></div>
                 </>
               )}
             </section>
