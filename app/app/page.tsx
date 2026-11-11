@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "./lib/supabase-browser";
 import properties from "./data/properties.json";
 
@@ -422,10 +422,12 @@ function ThisWeekView({
   );
 }
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = getSupabaseBrowserClient();
-  const [view, setView] = useState<View>(supabase ? "this-week" : "opportunities");
+  const requestedView = searchParams.get("view");
+  const [view, setView] = useState<View>(() => supabase && requestedView === "opportunities" ? "opportunities" : supabase ? "this-week" : "opportunities");
   const [query, setQuery] = useState("");
   const [opportunityStrength, setOpportunityStrength] = useState("ALL");
   const [confidence, setConfidence] = useState("ALL");
@@ -678,6 +680,7 @@ export default function Home() {
         <nav aria-label="Primary navigation" className="primary-nav">
           {supabase && <button className={`nav-item ${view === "this-week" ? "nav-active" : ""}`} onClick={() => setView("this-week")}>▸ This Week <span className="nav-count">{cohort?.actual_size ?? "—"}</span></button>}
           <button className={`nav-item ${view === "opportunities" ? "nav-active" : ""}`} onClick={() => setView("opportunities")}>≡ All Opportunities <span className="nav-count">{filtered.length}</span></button>
+          {supabase && <button className="nav-item" onClick={() => router.push("/direct-mail")}>✉ Direct Mail</button>}
           {supabase && <button className="nav-item" onClick={() => router.push("/settings")}>⚙ Settings</button>}
         </nav>
         <div className="sidebar-bottom">
@@ -942,6 +945,10 @@ export default function Home() {
       )}
     </div>
   );
+}
+
+export default function Home() {
+  return <Suspense fallback={<main className="app-frame"><div className="sheet"><div className="content"><div className="empty-state">Loading workspace…</div></div></div></main>}><HomeContent /></Suspense>;
 }
 
 // ---------------------------------------------------------------------------

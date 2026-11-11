@@ -144,6 +144,76 @@
   .hvac-highlight span { text-align:left; }
 }
 
+/* M7-1 direct-mail builder */
+.direct-mail-title { align-items:flex-end; }
+.direct-mail-empty { display:grid; justify-items:start; gap:10px; max-width:560px; padding:64px 0; }
+.direct-mail-empty strong { font-size:19px; font-weight:600; }
+.direct-mail-empty span { color:var(--muted); font-size:13px; line-height:1.5; }
+.campaign-builder { display:grid; gap:18px; }
+.builder-toolbar { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+.builder-toolbar h2 { margin-top:8px; font-size:22px; }
+.builder-toolbar p:not(.eyebrow) { margin-top:6px; color:var(--muted); font-size:13px; }
+.builder-summary { display:flex; align-items:end; justify-content:space-between; padding:16px 0; border-bottom:1px solid var(--border); }
+.builder-summary > div { display:grid; gap:5px; }
+.builder-summary strong { font-family:var(--font-mono),monospace; font-size:30px; font-weight:400; line-height:1; }
+.builder-summary > span { color:var(--muted); font-size:12px; }
+.quick-select { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.quick-select button { min-height:34px; padding:0 11px; border:1px solid var(--control); border-radius:6px; background:#fff; color:#4f5758; font-size:12px; }
+.quick-select button:hover { border-color:#7caeb4; background:#f1f8f8; color:#155668; }
+.mailing-opportunity-list { display:grid; border-top:1px solid var(--border); }
+.mailing-opportunity { display:grid; grid-template-columns:20px minmax(0,1fr); gap:12px; padding:15px 10px; border-bottom:1px solid var(--rule); cursor:pointer; }
+.mailing-opportunity:hover,.mailing-opportunity-selected { background:#f8fbfb; }
+.mailing-opportunity input { width:17px; height:17px; margin-top:3px; accent-color:var(--accent); }
+.mailing-opportunity-disabled { cursor:not-allowed; opacity:.62; background:#fafbfb; }
+.mailing-opportunity-main { min-width:0; }
+.mailing-opportunity-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.mailing-opportunity-heading strong { min-width:0; color:var(--text); font-size:14px; font-weight:600; }
+.mailing-opportunity-location,.mailing-opportunity-context,.mailing-availability,.recent-mail-warning { display:block; margin-top:3px; font-size:11px; }
+.mailing-opportunity-location { color:#5d6566; }
+.mailing-opportunity-context { color:#7a8081; }
+.mailing-availability { color:#8b3417; }
+.recent-mail-warning { color:#8b5e19; font-weight:600; }
+.sender-warning { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:13px 14px; border-left:3px solid #c89d43; background:#fffaf0; }
+.sender-warning div { display:grid; gap:3px; }
+.sender-warning strong { color:#76551c; font-size:12px; }
+.sender-warning span { color:#7a8081; font-size:11px; }
+.recipient-review { padding-top:20px; border-top:1px solid var(--border); }
+.recipient-review-heading { display:flex; align-items:baseline; justify-content:space-between; gap:16px; }
+.recipient-review-heading h3 { margin-top:6px; font-size:17px; }
+.recipient-review-heading > span { color:#7a8081; font-size:11px; }
+.recipient-review-list { display:grid; margin-top:14px; border-top:1px solid var(--border); }
+.recipient-review-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 10px; border-bottom:1px solid var(--rule); }
+.recipient-review-row > div:first-child { min-width:0; display:grid; gap:3px; }
+.recipient-review-row strong { overflow-wrap:anywhere; font-size:12px; font-weight:600; }
+.recipient-review-row span { color:#5d6566; font-size:11px; overflow-wrap:anywhere; }
+.recipient-review-meta { display:flex; align-items:center; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+.recipient-review-empty { margin-top:14px; color:var(--muted); font-size:12px; }
+.builder-next-step { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:16px 0 4px; border-top:1px solid var(--border); }
+.builder-next-step div { display:grid; gap:4px; }
+.builder-next-step strong { font-size:13px; }
+.builder-next-step span { color:var(--muted); font-size:11px; }
+.builder-next-step button:disabled { opacity:.55; cursor:not-allowed; }
+.direct-mail-state { display:grid; justify-items:start; gap:9px; max-width:560px; padding:54px 0; color:var(--muted); font-size:13px; }
+.direct-mail-state strong { color:var(--text); font-size:17px; }
+.direct-mail-error strong { color:#8b3417; }
+
+@media (max-width:700px) {
+  .direct-mail-title { display:block; }
+  .direct-mail-title .title-actions { margin-top:18px; }
+  .direct-mail-title .title-actions button { width:100%; justify-content:center; }
+  .builder-toolbar { align-items:flex-start; flex-direction:column; gap:14px; }
+  .builder-toolbar .secondary-button { width:100%; justify-content:center; }
+  .builder-summary { align-items:flex-start; flex-direction:column; gap:8px; }
+  .mailing-opportunity-heading { align-items:flex-start; flex-direction:column; gap:7px; }
+  .sender-warning { align-items:flex-start; flex-direction:column; }
+  .sender-warning button { width:100%; justify-content:center; }
+  .recipient-review-heading { align-items:flex-start; flex-direction:column; gap:6px; }
+  .recipient-review-row { align-items:flex-start; flex-direction:column; }
+  .recipient-review-meta { justify-content:flex-start; }
+  .builder-next-step { align-items:stretch; flex-direction:column; }
+  .builder-next-step button { width:100%; justify-content:center; }
+}
+
 /* Mobile prospect cards: the table remains the desktop presentation. */
 .mobile-prospect-list { display:none; }
 .mobile-prospect-card { width:100%; display:block; padding:16px; border:1px solid var(--border); border-radius:8px; background:#fff; color:var(--text); text-align:left; box-shadow:none; }
