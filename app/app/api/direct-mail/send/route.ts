@@ -153,11 +153,15 @@ export async function POST(request: Request) {
     snapshots.push({ opportunityId, name: recipientName(opportunity), address1: clean(opportunity.address), address2: null, city: clean(opportunity.property_city), state: "TX", zip: clean(opportunity.property_zip) });
   }
 
-  const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  const { data: recentRows, error: recentError } = await admin.from("outreach_recipients").select("opportunity_id,created_at,status").eq("workspace_id", workspaceId).in("opportunity_id", opportunityIds).gte("created_at", cutoff).in("status", RECENT_MAIL_STATUSES).order("created_at", { ascending: false });
+  const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const fallbackCutoff = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: recentRows, error: recentError } = await admin.from("outreach_recipients").select("opportunity_id,created_at,mailed_at,status").eq("workspace_id", workspaceId).in("opportunity_id", opportunityIds).gte("created_at", fallbackCutoff).in("status", RECENT_MAIL_STATUSES).order("created_at", { ascending: false });
   if (recentError) return NextResponse.json({ error: "RECENT_MAIL_LOOKUP_FAILED" }, { status: 500 });
   const recent = new Map<string, string>();
-  for (const row of recentRows || []) if (!recent.has(row.opportunity_id)) recent.set(row.opportunity_id, row.created_at);
+  for (const row of [...(recentRows || [])].sort((a, b) => new Date((b as { mailed_at?: string | null; created_at: string }).mailed_at || b.created_at).getTime() - new Date((a as { mailed_at?: string | null; created_at: string }).mailed_at || a.created_at).getTime())) {
+    const effective = (row as { mailed_at?: string | null; created_at: string }).mailed_at || row.created_at;
+    if (!recent.has(row.opportunity_id) && new Date(effective) >= cutoff) recent.set(row.opportunity_id, effective);
+  }
   if (recent.size && body.acknowledge_recent_mail !== true) return NextResponse.json({ error: "RECENT_MAIL_CONFIRMATION_REQUIRED", recent_opportunity_ids: [...recent.keys()] }, { status: 409 });
 
   const key = idempotencyKey(workspaceId, cohort.id, opportunityIds, mode.mode, selectionRule);

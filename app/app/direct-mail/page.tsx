@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 
@@ -50,7 +50,33 @@ type SenderSettings = {
   website: string | null;
 };
 
-type RecentMail = { created_at: string; status: string };
+type RecentMail = { created_at: string; mailed_at: string | null; status: string };
+type CampaignHistory = {
+  id: string;
+  mode: "test" | "live";
+  status: string;
+  recipient_count: number;
+  estimated_total_cost_cents: number;
+  created_at: string;
+  completed_at: string | null;
+};
+type CampaignRecipient = {
+  id: string;
+  campaign_id: string;
+  recipient_name: string | null;
+  address1: string;
+  city: string;
+  state: string;
+  zip: string;
+  status: string;
+  failure_reason: string | null;
+  mailed_at: string | null;
+  in_transit_at: string | null;
+  in_local_area_at: string | null;
+  delivered_at: string | null;
+  returned_at: string | null;
+  created_at: string;
+};
 
 const RECENT_MAIL_STATUSES = ["PENDING", "SENDING", "MAILED", "IN_TRANSIT", "IN_LOCAL_AREA", "DELIVERED", "RETURNED"];
 
@@ -98,6 +124,10 @@ function senderComplete(sender: SenderSettings | null) {
 
 function isRecentlyMailed(recent: RecentMail | undefined) {
   return Boolean(recent);
+}
+
+function effectiveMailDate(row: { mailed_at?: string | null; created_at: string }) {
+  return row.mailed_at || row.created_at;
 }
 
 type PreviewCost = {
@@ -193,6 +223,23 @@ function DirectMailNav({ router, workspaceName }: { router: ReturnType<typeof us
   );
 }
 
+function CampaignHistory({ campaigns, recipients, selectedId, onSelect }: { campaigns: CampaignHistory[]; recipients: CampaignRecipient[]; selectedId: string | null; onSelect: (id: string) => void }) {
+  const selected = campaigns.find((campaign) => campaign.id === selectedId);
+  const selectedRecipients = recipients.filter((recipient) => recipient.campaign_id === selectedId);
+  const summary = (campaign: CampaignHistory) => {
+    const rows = recipients.filter((recipient) => recipient.campaign_id === campaign.id);
+    const counts = rows.reduce<Record<string, number>>((result, row) => { result[row.status] = (result[row.status] || 0) + 1; return result; }, {});
+    return ["DELIVERED", "IN_TRANSIT", "IN_LOCAL_AREA", "MAILED", "RETURNED"].filter((status) => counts[status]).map((status) => `${counts[status]} ${status.toLowerCase().replaceAll("_", " ")}`).join(" · ") || "No delivery events yet";
+  };
+  return <section className="campaign-history" aria-labelledby="campaign-history-heading">
+    <div className="section-heading"><div><p className="eyebrow">OUTREACH HISTORY</p><h2 id="campaign-history-heading">Campaign history</h2></div><span>Property-address mailings</span></div>
+    {campaigns.length === 0 ? <div className="direct-mail-empty"><strong>No campaigns yet</strong><span>Your first TEST MODE campaign will appear here after postcards are created.</span></div> : <div className="campaign-history-grid">
+      <div className="campaign-history-list">{campaigns.map((campaign) => <button type="button" className={`campaign-history-row ${selectedId === campaign.id ? "campaign-history-row-selected" : ""}`} key={campaign.id} onClick={() => onSelect(campaign.id)}><span><strong>{displayDate(campaign.created_at)}</strong><small>{campaign.mode.toUpperCase()} · {campaign.status.replaceAll("_", " ")}</small></span><span><strong>{campaign.recipient_count} recipients</strong><small>{summary(campaign)}</small></span></button>)}</div>
+      {selected && <div className="campaign-detail"><p className="eyebrow">{selected.mode.toUpperCase()} CAMPAIGN</p><h3>{displayDate(selected.created_at)}</h3><p>{selected.recipient_count} recipients · Estimated {moneyFromCents(selected.estimated_total_cost_cents)}</p><div className="campaign-detail-list">{selectedRecipients.map((recipient) => <div className="campaign-detail-row" key={recipient.id}><div><strong>{recipient.recipient_name || "Current Resident"}</strong><span>{recipient.address1}, {recipient.city}, {recipient.state} {recipient.zip}</span></div><div><strong>{recipient.status.replaceAll("_", " ")}</strong><span>{recipient.delivered_at ? `Delivered ${displayDate(recipient.delivered_at)}` : recipient.returned_at ? `Returned ${displayDate(recipient.returned_at)}` : recipient.mailed_at ? `Mailed ${displayDate(recipient.mailed_at)}` : recipient.failure_reason || "No event recorded"}</span></div></div>)}</div></div>}
+    </div>}
+  </section>;
+}
+
 export default function DirectMailPage() {
   const router = useRouter();
   const supabase = getSupabaseBrowserClient();
@@ -206,6 +253,9 @@ export default function DirectMailPage() {
   const [sender, setSender] = useState<SenderSettings | null>(null);
   const [workspaceName, setWorkspaceName] = useState("Dallas contractor workspace");
   const [recentMail, setRecentMail] = useState<Record<string, RecentMail>>({});
+  const [campaigns, setCampaigns] = useState<CampaignHistory[]>([]);
+  const [campaignRecipients, setCampaignRecipients] = useState<CampaignRecipient[]>([]);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState("");
@@ -256,20 +306,43 @@ export default function DirectMailPage() {
         website: workspace.mail_from_website,
       });
 
+      const { data: campaignRows, error: campaignError } = await supabase
+        .from("outreach_campaigns")
+        .select("id,mode,status,recipient_count,estimated_total_cost_cents,created_at,completed_at")
+        .eq("workspace_id", workspaceId)
+        .order("created_at", { ascending: false });
+      if (campaignError) throw new Error("We could not load outreach history.");
+      const history = (campaignRows || []) as CampaignHistory[];
+      setCampaigns(history);
+      setSelectedCampaignId((current) => current && history.some((campaign) => campaign.id === current) ? current : history[0]?.id || null);
+      if (history.length) {
+        const { data: recipientRows, error: recipientError } = await supabase
+          .from("outreach_recipients")
+          .select("id,campaign_id,recipient_name,address1,city,state,zip,status,failure_reason,mailed_at,in_transit_at,in_local_area_at,delivered_at,returned_at,created_at")
+          .eq("workspace_id", workspaceId)
+          .in("campaign_id", history.map((campaign) => campaign.id))
+          .order("created_at", { ascending: true });
+        if (recipientError) throw new Error("We could not load outreach recipients.");
+        setCampaignRecipients((recipientRows || []) as CampaignRecipient[]);
+      } else {
+        setCampaignRecipients([]);
+      }
+
       const ids = (payload.members || []).map((member) => member.opportunity.id);
       if (ids.length) {
-        const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const fallbackCutoff = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+        const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const { data: mailed, error: mailedError } = await supabase
           .from("outreach_recipients")
-          .select("opportunity_id,created_at,status")
+          .select("opportunity_id,created_at,mailed_at,status")
           .eq("workspace_id", workspaceId)
           .in("opportunity_id", ids)
-          .gte("created_at", cutoff)
+          .gte("created_at", fallbackCutoff)
           .in("status", RECENT_MAIL_STATUSES)
           .order("created_at", { ascending: false });
         if (mailedError) throw new Error("We could not check recent mailing activity.");
-        const recent = Object.fromEntries((mailed || []).reduce((entries: Array<[string, RecentMail]>, row: { opportunity_id: string; created_at: string; status: string }) => {
-          if (!entries.some(([opportunityId]) => opportunityId === row.opportunity_id)) entries.push([row.opportunity_id, { created_at: row.created_at, status: row.status }]);
+        const recent = Object.fromEntries((mailed || []).map((row: { opportunity_id: string; created_at: string; mailed_at: string | null; status: string }) => ({ ...row, effective: new Date(effectiveMailDate(row)) })).filter((row: { effective: Date }) => !Number.isNaN(row.effective.getTime()) && row.effective >= cutoff).sort((a: { effective: Date }, b: { effective: Date }) => b.effective.getTime() - a.effective.getTime()).reduce((entries: Array<[string, RecentMail]>, row: { opportunity_id: string; created_at: string; mailed_at: string | null; status: string }) => {
+          if (!entries.some(([opportunityId]) => opportunityId === row.opportunity_id)) entries.push([row.opportunity_id, { created_at: row.created_at, mailed_at: row.mailed_at, status: row.status }]);
           return entries;
         }, []));
         setRecentMail(recent);
@@ -292,6 +365,10 @@ export default function DirectMailPage() {
     setBuilderOpen(true);
     void loadBuilder();
   };
+
+  useEffect(() => {
+    if (supabase) void Promise.resolve().then(() => loadBuilder());
+  }, [loadBuilder, supabase]);
 
   const selectByPriority = (allowed: Priority[]) => {
     setSelectedIds(new Set(availableMembers.filter((member) => allowed.includes(member.opportunity.opportunity_strength)).map((member) => member.opportunity.id)));
@@ -382,7 +459,7 @@ export default function DirectMailPage() {
           {!supabase ? (
             <div className="direct-mail-empty" role="status"><strong>Direct Mail requires a contractor workspace</strong><span>Connect Supabase and sign in to prepare postcards from a weekly prospect list.</span></div>
           ) : !builderOpen ? (
-            <section className="direct-mail-empty" aria-labelledby="campaign-empty-heading"><p className="eyebrow">CAMPAIGNS</p><strong id="campaign-empty-heading">No campaigns yet</strong><span>Your first campaign will start with homes from the current weekly prospect list. Nothing is created until a later confirmed-send step.</span><button className="primary-button" onClick={openBuilder}>New Campaign <span aria-hidden="true">→</span></button></section>
+            <><CampaignHistory campaigns={campaigns} recipients={campaignRecipients} selectedId={selectedCampaignId} onSelect={setSelectedCampaignId} /><section className="direct-mail-empty direct-mail-history-action"><span>Prepare another mailing from the current weekly prospect list.</span><button className="primary-button" onClick={openBuilder}>New Campaign <span aria-hidden="true">→</span></button></section></>
           ) : (
             <section className="campaign-builder" aria-busy={loading}>
               <div className="builder-toolbar"><div><p className="eyebrow">NEW CAMPAIGN · CURRENT WEEK ONLY</p><h2>Choose homes to mail</h2><p>Select from the persisted This Week cohort. Selection stays on this device until postcard preview is available.</p></div><button className="secondary-button" onClick={() => { setBuilderOpen(false); setSelectedIds(new Set()); }}>Back to campaigns</button></div>
@@ -400,7 +477,7 @@ export default function DirectMailPage() {
                       const checked = selectedIds.has(opportunity.id);
                       return <label className={`mailing-opportunity ${checked ? "mailing-opportunity-selected" : ""} ${issue ? "mailing-opportunity-disabled" : ""}`} key={member.id}>
                         <input type="checkbox" checked={checked} disabled={Boolean(issue)} onChange={() => toggleSelection(opportunity.id)} />
-                        <div className="mailing-opportunity-main"><div className="mailing-opportunity-heading"><strong>{opportunity.address || "Property address unavailable"}</strong><span className={`priority-label priority-${priorityTone(opportunity.opportunity_strength)}`}>{priorityLabel(opportunity.opportunity_strength)}</span></div><span className="mailing-opportunity-location">{opportunity.property_city || "City unavailable"}, TX {opportunity.property_zip || "ZIP unavailable"}</span><span className="mailing-opportunity-context">{opportunity.latest_permit_date ? `${displayDate(opportunity.latest_permit_date)} · ${hvacLabel(opportunity)}` : "No recorded HVAC event"}{opportunity.year_built ? ` · Built ${opportunity.year_built}` : ""}</span>{issue ? <span className="mailing-availability">{issue}</span> : recent && <span className="recent-mail-warning">Mailed recently · {displayDate(recent.created_at)}</span>}</div>
+                        <div className="mailing-opportunity-main"><div className="mailing-opportunity-heading"><strong>{opportunity.address || "Property address unavailable"}</strong><span className={`priority-label priority-${priorityTone(opportunity.opportunity_strength)}`}>{priorityLabel(opportunity.opportunity_strength)}</span></div><span className="mailing-opportunity-location">{opportunity.property_city || "City unavailable"}, TX {opportunity.property_zip || "ZIP unavailable"}</span><span className="mailing-opportunity-context">{opportunity.latest_permit_date ? `${displayDate(opportunity.latest_permit_date)} · ${hvacLabel(opportunity)}` : "No recorded HVAC event"}{opportunity.year_built ? ` · Built ${opportunity.year_built}` : ""}</span>{issue ? <span className="mailing-availability">{issue}</span> : recent && <span className="recent-mail-warning">Mailed recently · {displayDate(effectiveMailDate(recent))}</span>}</div>
                       </label>;
                     })}
                   </div>

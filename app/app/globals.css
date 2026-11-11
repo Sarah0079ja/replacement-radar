@@ -21,6 +21,11 @@
 .detail-tags { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; }
 .context-badges { display:flex; flex-wrap:wrap; gap:6px; padding:14px 0; border-bottom:1px solid var(--border); }
 .detail-section textarea { width:100%; min-height:82px; resize:vertical; border:1px solid var(--control); border-radius:6px; padding:9px 10px; font:inherit; font-size:12px; margin-bottom:9px; }
+.outreach-history-list { display:grid; border-top:1px solid var(--rule); }
+.outreach-history-row { display:grid; gap:3px; padding:10px 0; border-bottom:1px solid var(--rule); }
+.outreach-history-row strong { font-size:12px; font-weight:600; }
+.outreach-history-row span { color:#5d6566; font-size:11px; }
+.outreach-history-row small { color:#8a9091; font-size:9px; letter-spacing:.06em; }
 .note-item { padding:9px 10px; border-left:2px solid #dce9ea; background:#f7f9f9; color:#4f5758; font-size:12px; margin-top:8px; }
 .error-message { color:#9a3412; font-size:12px; margin-bottom:9px; }
 
@@ -149,6 +154,25 @@
 .direct-mail-empty { display:grid; justify-items:start; gap:10px; max-width:560px; padding:64px 0; }
 .direct-mail-empty strong { font-size:19px; font-weight:600; }
 .direct-mail-empty span { color:var(--muted); font-size:13px; line-height:1.5; }
+.campaign-history { display:grid; gap:16px; }
+.campaign-history-grid { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:24px; }
+.campaign-history-list,.campaign-detail { border-top:1px solid var(--border); }
+.campaign-history-row { display:flex; width:100%; align-items:flex-start; justify-content:space-between; gap:18px; padding:14px 10px; border:0; border-bottom:1px solid var(--rule); background:#fff; color:var(--text); text-align:left; cursor:pointer; }
+.campaign-history-row:hover,.campaign-history-row-selected { background:#f8fbfb; }
+.campaign-history-row span { display:grid; gap:4px; min-width:0; }
+.campaign-history-row span:last-child { text-align:right; }
+.campaign-history-row strong { font-size:12px; font-weight:600; }
+.campaign-history-row small { color:var(--muted); font-size:10px; line-height:1.35; }
+.campaign-detail { padding:16px 10px; }
+.campaign-detail h3 { margin-top:5px; font-size:18px; }
+.campaign-detail > p:not(.eyebrow) { margin-top:5px; color:var(--muted); font-size:12px; }
+.campaign-detail-list { display:grid; margin-top:16px; border-top:1px solid var(--rule); }
+.campaign-detail-row { display:flex; justify-content:space-between; gap:18px; padding:11px 0; border-bottom:1px solid var(--rule); }
+.campaign-detail-row > div { display:grid; gap:3px; min-width:0; }
+.campaign-detail-row > div:last-child { text-align:right; }
+.campaign-detail-row strong { font-size:12px; }
+.campaign-detail-row span { color:var(--muted); font-size:11px; overflow-wrap:anywhere; }
+.direct-mail-history-action { padding-top:25px; padding-bottom:20px; }
 .campaign-builder { display:grid; gap:18px; }
 .builder-toolbar { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; padding-bottom:20px; border-bottom:1px solid var(--border); }
 .builder-toolbar h2 { margin-top:8px; font-size:22px; }
@@ -261,6 +285,11 @@
   .preview-next-step button { width:100%; justify-content:center; }
   .send-confirmation-actions { flex-direction:column-reverse; }
   .send-confirmation-actions button { width:100%; justify-content:center; }
+  .campaign-history-grid { grid-template-columns:1fr; gap:18px; }
+  .campaign-history-row { padding:14px 0; }
+  .campaign-detail { padding:16px 0; }
+  .campaign-detail-row { align-items:flex-start; flex-direction:column; gap:7px; }
+  .campaign-detail-row > div:last-child { text-align:left; }
 }
 
 /* Mobile prospect cards: the table remains the desktop presentation. */

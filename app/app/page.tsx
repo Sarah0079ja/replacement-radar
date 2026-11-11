@@ -9,6 +9,15 @@ type Property = (typeof properties)[number];
 type OccupancyStatus = "LIKELY_OWNER_OCCUPIED" | "LIKELY_ABSENTEE" | null;
 type Status = "NEW" | "CONTACTED" | "APPOINTMENT" | "WON" | "NOT INTERESTED";
 type Note = { id: string; body: string };
+type OutreachHistory = {
+  id: string;
+  mode: "test" | "live";
+  status: string;
+  created_at: string;
+  mailed_at: string | null;
+  delivered_at: string | null;
+  returned_at: string | null;
+};
 type View = "this-week" | "opportunities" | "map";
 type WeekFilter = "ALL" | "TODO" | "WORKED";
 
@@ -87,6 +96,12 @@ function isWithheld(value: string | null | undefined) {
 function safeOwnerValue(value: string | null | undefined, fallback: string) {
   if (isWithheld(value)) return "Withheld by DCAD";
   return value || fallback;
+}
+
+function outreachDate(value: string | null) {
+  if (!value) return "Date unavailable";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Date unavailable" : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
 }
 
 function safeOccupancy(property: EnrichedProperty): OccupancyStatus {
@@ -454,6 +469,7 @@ function HomeContent() {
   const [userInitials, setUserInitials] = useState("C");
   const [opportunityIds, setOpportunityIds] = useState<Record<string, string>>({});
   const [writeError, setWriteError] = useState("");
+  const [outreachHistory, setOutreachHistory] = useState<OutreachHistory[]>([]);
   const [cohort, setCohort] = useState<CohortResponse["cohort"]>(null);
   const [cohortMembers, setCohortMembers] = useState<CohortMember[]>([]);
   const [cohortReason, setCohortReason] = useState<string | undefined>();
@@ -536,9 +552,18 @@ function HomeContent() {
         const { data, error } = await supabase.from("lead_notes").select("id,body,created_at").eq("workspace_id", workspaceId).eq("opportunity_id", opportunityIds[selected.parcel_id]).order("created_at", { ascending: false });
         if (error) { setWriteError("We could not load private notes."); return; }
         if (active) setNotes((data || []).map((row: { id: string; body: string }) => ({ id: row.id, body: row.body })));
+        const { data: outreachRows, error: outreachError } = await supabase
+          .from("outreach_recipients")
+          .select("id,status,created_at,mailed_at,delivered_at,returned_at,outreach_campaigns(mode)")
+          .eq("workspace_id", workspaceId)
+          .eq("opportunity_id", opportunityIds[selected.parcel_id])
+          .order("created_at", { ascending: false });
+        if (outreachError) { if (active) setOutreachHistory([]); }
+        else if (active) setOutreachHistory((outreachRows || []).map((row: { id: string; status: string; created_at: string; mailed_at: string | null; delivered_at: string | null; returned_at: string | null; outreach_campaigns?: { mode?: "test" | "live" } | null }) => ({ id: row.id, status: row.status, created_at: row.created_at, mailed_at: row.mailed_at, delivered_at: row.delivered_at, returned_at: row.returned_at, mode: row.outreach_campaigns?.mode || "test" })));
       } else {
         await Promise.resolve();
         if (active) {
+          setOutreachHistory([]);
           const local = JSON.parse(localStorage.getItem(`radar-notes-${selected.parcel_id}`) || "[]");
           setNotes(local.map((note: string | Note, index: number) => typeof note === "string" ? { id: `local-${index}-${note}`, body: note } : note));
         }
@@ -940,6 +965,7 @@ function HomeContent() {
           setNoteDraft={setNoteDraft}
           addNote={addNote}
           writeError={writeError}
+          outreachHistory={outreachHistory}
           onClose={() => setSelected(null)}
         />
       )}
@@ -1123,7 +1149,7 @@ function PropertyOverview({ property }: { property: Property }) {
 // ---------------------------------------------------------------------------
 
 function PropertyDetail({
-  property, status, onStatus, notes, noteDraft, setNoteDraft, addNote, writeError, onClose,
+  property, status, onStatus, notes, noteDraft, setNoteDraft, addNote, writeError, outreachHistory, onClose,
 }: {
   property: Property;
   status: Status;
@@ -1133,6 +1159,7 @@ function PropertyDetail({
   setNoteDraft: (value: string) => void;
   addNote: () => void;
   writeError: string;
+  outreachHistory: OutreachHistory[];
   onClose: () => void;
 }) {
   const p = property as EnrichedProperty;
@@ -1198,6 +1225,11 @@ function PropertyDetail({
             {statuses.map((value) => <option key={value}>{value}</option>)}
           </select>
         </div>
+
+        {outreachHistory.length > 0 && <div className="detail-section outreach-history-section">
+          <h3>Direct mail history</h3>
+          <div className="outreach-history-list">{outreachHistory.map((item) => <div className="outreach-history-row" key={item.id}><strong>{item.mailed_at ? `Mailed ${outreachDate(item.mailed_at)}` : `Postcard ${outreachDate(item.created_at)}`}</strong><span>{item.delivered_at ? `Delivered ${outreachDate(item.delivered_at)}` : item.returned_at ? `Returned ${outreachDate(item.returned_at)}` : item.status.replaceAll("_", " ")}</span><small>{item.mode.toUpperCase()} MODE</small></div>)}</div>
+        </div>}
 
         {/* HVAC Timeline */}
         <div className="detail-section">
