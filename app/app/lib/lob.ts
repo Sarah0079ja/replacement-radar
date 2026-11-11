@@ -1,6 +1,6 @@
 import "server-only";
 
-import { AddressesApi, Configuration } from "@lob/lob-typescript-sdk";
+import { AddressesApi, Configuration, PostcardsApi } from "@lob/lob-typescript-sdk";
 
 export type LobMode = "test" | "live";
 
@@ -25,6 +25,12 @@ export function getLobAddressesClient(mode: LobMode = "test") {
   const apiKey = mode === "live" ? process.env.LOB_LIVE_API_KEY : process.env.LOB_TEST_API_KEY;
   if (!apiKey) throw new Error(`LOB_${mode.toUpperCase()}_API_KEY_NOT_CONFIGURED`);
   return new AddressesApi(new Configuration({ username: apiKey }));
+}
+
+export function getLobPostcardsClient(mode: LobMode = "test") {
+  const apiKey = mode === "live" ? process.env.LOB_LIVE_API_KEY : process.env.LOB_TEST_API_KEY;
+  if (!apiKey) throw new Error(`LOB_${mode.toUpperCase()}_API_KEY_NOT_CONFIGURED`);
+  return new PostcardsApi(new Configuration({ username: apiKey }));
 }
 
 export async function pingLobTest() {

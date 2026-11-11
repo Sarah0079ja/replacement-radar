@@ -226,6 +226,16 @@
 .preview-next-step strong { font-size:13px; }
 .preview-next-step span { color:var(--muted); font-size:11px; }
 .preview-next-step button:disabled { opacity:.55; cursor:not-allowed; }
+.send-confirmation { display:grid; gap:8px; margin-top:16px; padding:16px; border:1px solid var(--border); background:#f8fbfb; }
+.send-confirmation > strong { font-size:14px; }
+.send-confirmation > span { color:#5d6566; font-size:12px; line-height:1.4; }
+.test-mode-label { color:#155668 !important; font-weight:700; }
+.send-override { display:flex; align-items:flex-start; gap:8px; margin-top:4px; color:#76551c; font-size:12px; line-height:1.4; }
+.send-override input { width:16px; height:16px; margin-top:1px; accent-color:var(--accent); }
+.send-confirmation-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:6px; }
+.send-result { display:grid; gap:4px; margin-top:16px; padding:14px; border-left:3px solid #3a9873; background:#f2faf6; }
+.send-result strong { font-size:13px; }
+.send-result span { color:#5d6566; font-size:12px; }
 
 @media (max-width:700px) {
   .direct-mail-title { display:block; }
@@ -249,6 +259,8 @@
   .preview-recipient > span { white-space:normal; }
   .preview-next-step { align-items:stretch; flex-direction:column; }
   .preview-next-step button { width:100%; justify-content:center; }
+  .send-confirmation-actions { flex-direction:column-reverse; }
+  .send-confirmation-actions button { width:100%; justify-content:center; }
 }
 
 /* Mobile prospect cards: the table remains the desktop presentation. */

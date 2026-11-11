@@ -107,6 +107,11 @@ type PreviewCost = {
   estimated_total_cost_cents: number;
 };
 
+type SendResult = {
+  campaign?: { status: string; mode: string; recipient_count: number };
+  error?: string;
+};
+
 function moneyFromCents(cents: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
 }
@@ -120,6 +125,11 @@ function PostcardPreview({
   loading,
   onBack,
   onRetry,
+  hasRecentMail,
+  onSend,
+  sendLoading,
+  sendError,
+  sendResult,
 }: {
   sender: SenderSettings;
   member: CohortMember;
@@ -129,10 +139,18 @@ function PostcardPreview({
   loading: boolean;
   onBack: () => void;
   onRetry: () => void;
+  hasRecentMail: boolean;
+  onSend: (acknowledgeRecentMail: boolean) => void;
+  sendLoading: boolean;
+  sendError: string;
+  sendResult: SendResult | null;
 }) {
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [acknowledged, setAcknowledged] = useState(false);
   const opportunity = member.opportunity;
   const name = recipientName(opportunity);
   const address = `${opportunity.address}, ${opportunity.property_city}, TX ${opportunity.property_zip}`;
+  const selectedHasRecentMail = hasRecentMail;
   return (
     <section className="postcard-preview" aria-busy={loading}>
       <div className="builder-toolbar"><div><p className="eyebrow">POSTCARD PREVIEW · ONE STANDARD DESIGN</p><h2>Review your postcard</h2><p>This preview uses the first selected recipient. Personalization will apply to each selected property.</p></div><button className="secondary-button" onClick={onBack}>← Back to recipients</button></div>
@@ -144,7 +162,9 @@ function PostcardPreview({
             <div className="postcard-face"><div className="postcard-face-label">BACK · {cost.format}</div><div className="postcard-back"><div><strong>{name}</strong><span>{address}</span></div><div className="postcard-message"><strong>Your home deserves dependable comfort.</strong><p>If your heating or cooling system needs attention, we’re here to help with straightforward service from a local team.</p><strong>Call {sender.phone}</strong>{sender.website && <span>{sender.website}</span>}</div><div className="postcard-return"><span>Return address</span><strong>{sender.name}</strong><span>{sender.address1}{sender.address2 ? `, ${sender.address2}` : ""}</span><span>{sender.city}, {sender.state} {sender.zip}</span></div></div></div>
           </div>
           <div className="preview-recipient"><div><span className="stat-label">EXAMPLE RECIPIENT</span><strong>{name}</strong><span>{address}</span></div><span>Physical property address only</span></div>
-          <div className="preview-next-step"><div><strong>Sending comes next</strong><span>This is a local preview. M7-3 will add the confirmed send flow.</span></div><button className="primary-button" disabled>Send campaign — available next</button></div>
+          <div className="preview-next-step"><div><strong>Ready to send</strong><span>Postcards will be created in Lob TEST MODE. No physical mail will be delivered.</span></div>{!confirmationOpen && !sendResult && <button className="primary-button" onClick={() => setConfirmationOpen(true)}>Review &amp; send</button>}</div>
+          {confirmationOpen && !sendResult && <div className="send-confirmation" role="region" aria-label="Confirm postcard send"><strong>Confirm postcard creation</strong><span>{recipientCount} postcard{recipientCount === 1 ? "" : "s"} will be created at an estimated total of {moneyFromCents(cost.estimated_total_cost_cents)}.</span><span>Sender: {sender.name}, {sender.city}, {sender.state}</span><span className="test-mode-label">TEST MODE — no physical mail will be delivered</span>{selectedHasRecentMail && <label className="send-override"><input type="checkbox" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} /> Some selected homes were mailed recently. I understand and want to continue.</label>}<div className="send-confirmation-actions"><button className="secondary-button" onClick={() => setConfirmationOpen(false)} disabled={sendLoading}>Back</button><button className="primary-button" onClick={() => onSend(acknowledged)} disabled={sendLoading || (selectedHasRecentMail && !acknowledged)}>{sendLoading ? "Creating postcards…" : "Confirm & send"}</button></div>{sendError && <p className="direct-mail-error" role="alert">{sendError}</p>}</div>}
+          {sendResult?.campaign && <div className="send-result" role="status"><strong>Postcard campaign {sendResult.campaign.status.toLowerCase().replaceAll("_", " ")}</strong><span>{sendResult.campaign.recipient_count} TEST MODE postcard{sendResult.campaign.recipient_count === 1 ? "" : "s"} created. No physical mail was delivered.</span></div>}
         </>
       ) : null}
     </section>
@@ -190,6 +210,9 @@ export default function DirectMailPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState("");
   const [previewCost, setPreviewCost] = useState<PreviewCost | null>(null);
+  const [sendLoading, setSendLoading] = useState(false);
+  const [sendError, setSendError] = useState("");
+  const [sendResult, setSendResult] = useState<SendResult | null>(null);
 
   const loadBuilder = useCallback(async () => {
     if (!supabase) return;
@@ -239,12 +262,16 @@ export default function DirectMailPage() {
         const { data: mailed, error: mailedError } = await supabase
           .from("outreach_recipients")
           .select("opportunity_id,created_at,status")
+          .eq("workspace_id", workspaceId)
           .in("opportunity_id", ids)
           .gte("created_at", cutoff)
           .in("status", RECENT_MAIL_STATUSES)
           .order("created_at", { ascending: false });
         if (mailedError) throw new Error("We could not check recent mailing activity.");
-        const recent = Object.fromEntries((mailed || []).map((row: { opportunity_id: string; created_at: string; status: string }) => [row.opportunity_id, { created_at: row.created_at, status: row.status }]));
+        const recent = Object.fromEntries((mailed || []).reduce((entries: Array<[string, RecentMail]>, row: { opportunity_id: string; created_at: string; status: string }) => {
+          if (!entries.some(([opportunityId]) => opportunityId === row.opportunity_id)) entries.push([row.opportunity_id, { created_at: row.created_at, status: row.status }]);
+          return entries;
+        }, []));
         setRecentMail(recent);
       } else {
         setRecentMail({});
@@ -259,6 +286,7 @@ export default function DirectMailPage() {
   const availableMembers = useMemo(() => members.filter((member) => !mailingIssue(member.opportunity)), [members]);
   const selectedMembers = useMemo(() => members.filter((member) => selectedIds.has(member.opportunity.id)), [members, selectedIds]);
   const senderIsComplete = senderComplete(sender);
+  const selectedHasRecentMail = selectedMembers.some((member) => recentMail[member.opportunity.id] !== undefined);
 
   const openBuilder = () => {
     setBuilderOpen(true);
@@ -313,6 +341,30 @@ export default function DirectMailPage() {
     }
   };
 
+  const sendCampaign = async (acknowledgeRecentMail: boolean) => {
+    setSendLoading(true);
+    setSendError("");
+    try {
+      const response = await fetch("/api/direct-mail/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ opportunity_ids: selectedMembers.map((member) => member.opportunity.id), selection_rule: "CUSTOM", confirmation: true, acknowledge_recent_mail: acknowledgeRecentMail, mode: "test" }),
+      });
+      const payload = await response.json() as SendResult;
+      if (response.status === 401) {
+        router.push("/login");
+        return;
+      }
+      if (!response.ok) throw new Error(payload.error || "Postcards could not be created.");
+      setSendResult(payload);
+    } catch (sendLoadError) {
+      setSendError(sendLoadError instanceof Error ? sendLoadError.message : "Postcards could not be created.");
+    } finally {
+      setSendLoading(false);
+    }
+  };
+
   return (
     <div className="app-frame">
       {supabase && <DirectMailNav router={router} workspaceName={workspaceName} />}
@@ -335,7 +387,7 @@ export default function DirectMailPage() {
             <section className="campaign-builder" aria-busy={loading}>
               <div className="builder-toolbar"><div><p className="eyebrow">NEW CAMPAIGN · CURRENT WEEK ONLY</p><h2>Choose homes to mail</h2><p>Select from the persisted This Week cohort. Selection stays on this device until postcard preview is available.</p></div><button className="secondary-button" onClick={() => { setBuilderOpen(false); setSelectedIds(new Set()); }}>Back to campaigns</button></div>
 
-              {loading ? <div className="direct-mail-state" role="status">Loading this week’s prospects…</div> : error ? <div className="direct-mail-state direct-mail-error" role="alert"><strong>{error}</strong><button className="secondary-button" onClick={() => void loadBuilder()}>Try again</button></div> : reason === "NO_SERVICE_AREA" ? <div className="direct-mail-state" role="status"><strong>No service area configured</strong><span>Set up your territory before choosing homes for a mailing.</span><button className="secondary-button" onClick={() => router.push("/settings")}>Set up territory →</button></div> : !cohort ? <div className="direct-mail-state" role="status"><strong>No current weekly list</strong><span>Open This Week to generate the current prospect list before creating a mailing.</span><button className="secondary-button" onClick={() => router.push("/")}>Open This Week →</button></div> : previewOpen && sender ? <PostcardPreview sender={sender} member={selectedMembers[0]} recipientCount={selectedMembers.length} cost={previewCost} error={previewError} loading={previewLoading} onBack={() => setPreviewOpen(false)} onRetry={() => void openPreview()} /> : (
+              {loading ? <div className="direct-mail-state" role="status">Loading this week’s prospects…</div> : error ? <div className="direct-mail-state direct-mail-error" role="alert"><strong>{error}</strong><button className="secondary-button" onClick={() => void loadBuilder()}>Try again</button></div> : reason === "NO_SERVICE_AREA" ? <div className="direct-mail-state" role="status"><strong>No service area configured</strong><span>Set up your territory before choosing homes for a mailing.</span><button className="secondary-button" onClick={() => router.push("/settings")}>Set up territory →</button></div> : !cohort ? <div className="direct-mail-state" role="status"><strong>No current weekly list</strong><span>Open This Week to generate the current prospect list before creating a mailing.</span><button className="secondary-button" onClick={() => router.push("/")}>Open This Week →</button></div> : previewOpen && sender ? <PostcardPreview sender={sender} member={selectedMembers[0]} recipientCount={selectedMembers.length} cost={previewCost} error={previewError} loading={previewLoading} onBack={() => setPreviewOpen(false)} onRetry={() => void openPreview()} hasRecentMail={selectedHasRecentMail} onSend={sendCampaign} sendLoading={sendLoading} sendError={sendError} sendResult={sendResult} /> : (
                 <>
                   {!senderIsComplete && <div className="sender-warning" role="status"><div><strong>Complete your return address before postcard preview.</strong><span>Direct Mail uses your business sender identity. You can still review and select homes now.</span></div><button className="secondary-button" onClick={() => router.push("/settings")}>Open Settings →</button></div>}
                   <div className="builder-summary"><div><span className="stat-label">SELECTED RECIPIENTS</span><strong>{selectedMembers.length}</strong></div><span>{members.length} homes in this week’s cohort</span></div>
