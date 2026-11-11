@@ -13,6 +13,17 @@ type ExpansionResult = {
   cohort?: { actual_size: number; target_size: number; pool_exhausted: boolean } | null;
 };
 
+type SenderSettings = {
+  name: string;
+  address1: string;
+  address2: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone: string;
+  website: string;
+};
+
 function buildSavedMessage(result: ExpansionResult) {
   if (result.reason === "NO_CURRENT_COHORT") return "Settings saved. New target applies when you open This Week.";
   if (result.reason === "NO_SERVICE_AREA") return "Settings saved. Add ZIP codes to your service area to generate prospects.";
@@ -35,6 +46,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
+  const [sender, setSender] = useState<SenderSettings>({ name: "", address1: "", address2: "", city: "", state: "TX", zip: "", phone: "", website: "" });
 
   useEffect(() => {
     if (!supabase) return;
@@ -52,7 +64,7 @@ export default function SettingsPage() {
       }
 
       const [{ data: workspaceRow, error: workspaceError }, { data: opportunities, error: opportunityError }] = await Promise.all([
-        supabase.from("workspaces").select("name,service_zip_codes,weekly_target_size").eq("id", workspace).single(),
+        supabase.from("workspaces").select("name,service_zip_codes,weekly_target_size,mail_from_name,mail_from_address1,mail_from_address2,mail_from_city,mail_from_state,mail_from_zip,mail_from_phone,mail_from_website").eq("id", workspace).single(),
         supabase.from("opportunities").select("property_zip"),
       ]);
       if (workspaceError || opportunityError || !workspaceRow) {
@@ -69,6 +81,16 @@ export default function SettingsPage() {
       setSupportedZips(zips);
       setSelectedZips(configured);
       setWeeklyTarget(workspaceRow.weekly_target_size || 25);
+      setSender({
+        name: workspaceRow.mail_from_name || "",
+        address1: workspaceRow.mail_from_address1 || "",
+        address2: workspaceRow.mail_from_address2 || "",
+        city: workspaceRow.mail_from_city || "",
+        state: workspaceRow.mail_from_state || "TX",
+        zip: workspaceRow.mail_from_zip || "",
+        phone: workspaceRow.mail_from_phone || "",
+        website: workspaceRow.mail_from_website || "",
+      });
       setLoading(false);
     })();
   }, [supabase]);
@@ -90,7 +112,18 @@ export default function SettingsPage() {
     setError("");
     const { error: updateError } = await supabase
       .from("workspaces")
-      .update({ service_zip_codes: selectedZips, weekly_target_size: weeklyTarget })
+      .update({
+        service_zip_codes: selectedZips,
+        weekly_target_size: weeklyTarget,
+        mail_from_name: sender.name.trim(),
+        mail_from_address1: sender.address1.trim(),
+        mail_from_address2: sender.address2.trim() || null,
+        mail_from_city: sender.city.trim(),
+        mail_from_state: sender.state.trim().toUpperCase(),
+        mail_from_zip: sender.zip.trim(),
+        mail_from_phone: sender.phone.trim(),
+        mail_from_website: sender.website.trim() || null,
+      })
       .eq("id", workspaceId);
     setSaving(false);
     if (updateError) {
@@ -164,6 +197,18 @@ export default function SettingsPage() {
                 ))}
               </div>
               <p className="settings-note">Increasing your target adds more prospects to this week. Decreasing it applies next Monday.</p>
+            </section>
+
+            <section className="settings-section" aria-labelledby="sender-heading">
+              <div className="settings-section-heading"><div><h2 id="sender-heading">Return address for direct mail</h2><p>This address will appear as the return address on postcards you send. Use your business mailing address.</p></div></div>
+              <div className="sender-form">
+                <label><span>Business / sender name *</span><input value={sender.name} onChange={(event) => setSender({ ...sender, name: event.target.value })} /></label>
+                <label><span>Address line 1 *</span><input value={sender.address1} onChange={(event) => setSender({ ...sender, address1: event.target.value })} /></label>
+                <label><span>Address line 2</span><input value={sender.address2} onChange={(event) => setSender({ ...sender, address2: event.target.value })} /></label>
+                <div className="sender-form-row"><label><span>City *</span><input value={sender.city} onChange={(event) => setSender({ ...sender, city: event.target.value })} /></label><label><span>State *</span><input value={sender.state} maxLength={2} onChange={(event) => setSender({ ...sender, state: event.target.value.toUpperCase() })} /></label><label><span>ZIP *</span><input value={sender.zip} onChange={(event) => setSender({ ...sender, zip: event.target.value })} /></label></div>
+                <label><span>Phone *</span><input type="tel" value={sender.phone} onChange={(event) => setSender({ ...sender, phone: event.target.value })} /></label>
+                <label><span>Website</span><input type="url" value={sender.website} onChange={(event) => setSender({ ...sender, website: event.target.value })} placeholder="https://" /></label>
+              </div>
             </section>
 
             {error && <p className="settings-error" role="alert">{error}</p>}

@@ -26,6 +26,7 @@ app/supabase/.temp/
 
 # Local design/tool state
 .taste-skill/
+.mcp.json
 
 # Logs and editor/OS files
 *.log

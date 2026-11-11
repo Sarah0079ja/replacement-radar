@@ -116,6 +116,11 @@
 .settings-error { color:#8b3417; background:#fff5f1; border-color:#c26a4f; }
 .settings-success { color:#176141; background:#eff9f3; border-color:#5caa91; }
 .settings-state { padding:35px 0; color:var(--muted); }
+.sender-form { display:grid; gap:12px; margin-top:18px; }
+.sender-form label { display:grid; gap:5px; }
+.sender-form label > span { color:#727778; font-size:11px; }
+.sender-form input { width:100%; }
+.sender-form-row { display:grid; grid-template-columns:1fr 88px 120px; gap:10px; }
 @media (max-width:700px) { .settings-page { padding:18px 16px 42px; } .settings-topline { align-items:flex-start; gap:12px; } .settings-topline > span { text-align:right; } .settings-header { padding:30px 0 25px; } .settings-header h1 { font-size:23px; } .settings-section-heading { display:block; } .settings-count { display:block; margin-top:10px; } .zip-grid { grid-template-columns:repeat(2,1fr); } .target-options { grid-template-columns:1fr; } .settings-actions { flex-direction:column; } .settings-actions button { width:100%; justify-content:center; } }
 
 @media (max-width:900px) {
