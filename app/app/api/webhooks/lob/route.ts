@@ -50,6 +50,8 @@ function providerPieceId(payload: LobEvent) {
 }
 
 function shouldAdvance(current: string, next: string) {
+  // USPS can report a later return-to-sender exception after delivery; keep
+  // RETURNED visible and terminal once that exception has been observed.
   if (next === "RETURNED" && current !== "RETURNED" && current !== "CANCELLED") return true;
   if (current === "RETURNED" || current === "DELIVERED" || current === "CANCELLED") return false;
   if (current === "FAILED" && next !== "FAILED") return false;

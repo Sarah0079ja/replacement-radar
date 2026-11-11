@@ -557,6 +557,7 @@ function HomeContent() {
           .select("id,status,created_at,mailed_at,delivered_at,returned_at,outreach_campaigns(mode)")
           .eq("workspace_id", workspaceId)
           .eq("opportunity_id", opportunityIds[selected.parcel_id])
+          .limit(10)
           .order("created_at", { ascending: false });
         if (outreachError) { if (active) setOutreachHistory([]); }
         else if (active) setOutreachHistory((outreachRows || []).map((row: { id: string; status: string; created_at: string; mailed_at: string | null; delivered_at: string | null; returned_at: string | null; outreach_campaigns?: { mode?: "test" | "live" } | null }) => ({ id: row.id, status: row.status, created_at: row.created_at, mailed_at: row.mailed_at, delivered_at: row.delivered_at, returned_at: row.returned_at, mode: row.outreach_campaigns?.mode || "test" })));

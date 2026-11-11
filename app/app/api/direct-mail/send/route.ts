@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createTestPostcard, type RecipientSnapshot, type SenderSnapshot } from "../../../lib/direct-mail";
 import { getLobPricePerPieceCents } from "../../../lib/lob";
@@ -165,7 +165,8 @@ export async function POST(request: Request) {
   if (recent.size && body.acknowledge_recent_mail !== true) return NextResponse.json({ error: "RECENT_MAIL_CONFIRMATION_REQUIRED", recent_opportunity_ids: [...recent.keys()] }, { status: 409 });
 
   const key = idempotencyKey(workspaceId, cohort.id, opportunityIds, mode.mode, selectionRule);
-  const { data: existing } = await admin.from("outreach_campaigns").select("id,status,mode,recipient_count,estimated_total_cost_cents,actual_total_cost_cents,created_at,completed_at").eq("workspace_id", workspaceId).eq("idempotency_key", key).maybeSingle();
+  const { data: existing, error: existingError } = await admin.from("outreach_campaigns").select("id,status,mode,recipient_count,estimated_total_cost_cents,actual_total_cost_cents,created_at,completed_at").eq("workspace_id", workspaceId).eq("idempotency_key", key).maybeSingle();
+  if (existingError) return NextResponse.json({ error: "CAMPAIGN_LOOKUP_FAILED" }, { status: 500 });
   let campaign = existing;
   const price = getLobPricePerPieceCents();
   if (!Number.isInteger(price) || price <= 0 || price > 100000) return NextResponse.json({ error: "POSTCARD_PRICING_UNAVAILABLE" }, { status: 503 });
@@ -185,7 +186,7 @@ export async function POST(request: Request) {
   const { error: recipientInsertError } = await admin.from("outreach_recipients").upsert(recipientRows, { onConflict: "idempotency_key", ignoreDuplicates: true });
   if (recipientInsertError) return NextResponse.json({ error: "RECIPIENT_CREATE_FAILED" }, { status: 500 });
 
-  const { data: recipients, error: recipientLookupError } = await admin.from("outreach_recipients").select("id,opportunity_id,recipient_name,address1,address2,city,state,zip,address_source,provider_mail_piece_id,status,failure_reason,actual_cost_cents").eq("campaign_id", campaign.id).order("created_at", { ascending: true });
+  const { data: recipients, error: recipientLookupError } = await admin.from("outreach_recipients").select("id,opportunity_id,recipient_name,address1,address2,city,state,zip,address_source,provider_mail_piece_id,idempotency_key,status,failure_reason,actual_cost_cents").eq("campaign_id", campaign.id).order("created_at", { ascending: true });
   if (recipientLookupError || !recipients) return NextResponse.json({ error: "RECIPIENT_LOOKUP_FAILED" }, { status: 500 });
 
   if (campaign.status !== "SENT") {
@@ -193,12 +194,19 @@ export async function POST(request: Request) {
       if (recipient.status === "MAILED" && recipient.provider_mail_piece_id) continue;
       const snapshot = snapshots.find((item) => item.opportunityId === recipient.opportunity_id);
       if (!snapshot) continue;
-      await admin.from("outreach_recipients").update({ status: "SENDING", failure_reason: null, updated_at: new Date().toISOString() }).eq("id", recipient.id);
+      const claimToken = randomUUID();
+      const { data: claimResult, error: claimError } = await admin.rpc("claim_outreach_recipient_send", { p_recipient_id: recipient.id, p_claim_token: claimToken, p_stale_after_seconds: 900 });
+      if (claimError) return NextResponse.json({ error: "SEND_CLAIM_FAILED" }, { status: 500 });
+      if (claimResult === "COMPLETED") continue;
+      if (claimResult === "IN_PROGRESS") continue;
+      if (claimResult !== "CLAIMED" && claimResult !== "CLAIMED_RETRY") return NextResponse.json({ error: "RECIPIENT_NOT_SENDABLE" }, { status: 409 });
       try {
         const providerPostcard = await createTestPostcard(sender, snapshot, `m7-3:${campaign.id}:${snapshot.opportunityId}`);
-        await admin.from("outreach_recipients").update({ status: "MAILED", provider_mail_piece_id: providerPostcard.id, updated_at: new Date().toISOString() }).eq("id", recipient.id);
+        const { data: mailedRow, error: mailedUpdateError } = await admin.from("outreach_recipients").update({ status: "MAILED", provider_mail_piece_id: providerPostcard.id, updated_at: new Date().toISOString() }).eq("id", recipient.id).eq("send_claim_token", claimToken).select("id").single();
+        if (mailedUpdateError || !mailedRow) return NextResponse.json({ error: "PROVIDER_ACCEPTED_PERSISTENCE_PENDING" }, { status: 500 });
       } catch (providerError) {
-        await admin.from("outreach_recipients").update({ status: "FAILED", failure_reason: safeProviderFailure(providerError), updated_at: new Date().toISOString() }).eq("id", recipient.id);
+        const { data: failedRow, error: failedUpdateError } = await admin.from("outreach_recipients").update({ status: "FAILED", failure_reason: safeProviderFailure(providerError), failed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", recipient.id).eq("send_claim_token", claimToken).select("id").single();
+        if (failedUpdateError || !failedRow) return NextResponse.json({ error: "SEND_FAILURE_PERSISTENCE_PENDING" }, { status: 500 });
       }
     }
   }
@@ -208,7 +216,10 @@ export async function POST(request: Request) {
   const successful = finalRecipients.filter((recipient) => recipient.status === "MAILED").length;
   const failed = finalRecipients.filter((recipient) => recipient.status === "FAILED").length;
   const finalStatus = successful === finalRecipients.length ? "SENT" : successful > 0 ? "PARTIALLY_SENT" : failed === finalRecipients.length ? "FAILED" : "SENDING";
-  if (finalStatus !== "SENDING") await admin.from("outreach_campaigns").update({ status: finalStatus, completed_at: new Date().toISOString() }).eq("id", campaign.id);
+  if (finalStatus !== "SENDING") {
+    const { error: campaignStatusError } = await admin.from("outreach_campaigns").update({ status: finalStatus, completed_at: new Date().toISOString() }).eq("id", campaign.id);
+    if (campaignStatusError) return NextResponse.json({ error: "CAMPAIGN_STATUS_UPDATE_FAILED" }, { status: 500 });
+  }
 
   return NextResponse.json({ campaign: { ...campaign, status: finalStatus, mode: mode.mode }, recipients: finalRecipients, estimated_per_piece_cost_cents: price, estimated_total_cost_cents: estimatedTotal });
 }
