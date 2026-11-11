@@ -1,0 +1,20 @@
+.page { min-height:100svh; display:grid; place-items:center; padding:24px; background:#f4f6f7; color:#131416; }
+.card { width:min(420px,100%); padding:36px; background:#fff; border:1px solid #e4e8e9; border-radius:12px; }
+.mark { display:grid; place-items:center; width:34px; height:34px; border-radius:8px; background:#1b6c80; color:#fff; font-weight:600; margin-bottom:28px; }
+.kicker { color:#727778; font-size:10px; letter-spacing:.08em; font-weight:600; }
+.card h1 { margin:10px 0 0; font-size:25px; line-height:1.15; letter-spacing:-.035em; font-weight:500; }
+.intro { color:#5d5f60; margin:8px 0 26px; font-size:13px; }
+.form { display:grid; gap:15px; }
+.form label { display:grid; gap:6px; color:#4d5556; font-size:12px; }
+.form input { width:100%; }
+.form button,.demo button { min-height:36px; border:1px solid #155668; border-radius:6px; color:#fff; background:#1b6c80; font-weight:500; }
+.button { width:100%; min-height:36px; border:1px solid #155668; border-radius:6px; color:#fff; background:#1b6c80; font-weight:500; }
+.form button:disabled { opacity:.65; cursor:wait; }
+.error { color:#9a3412; font-size:12px; }
+.demo { display:grid; gap:13px; color:#4d5556; font-size:13px; }
+.demo p { margin:0; }
+.demo small { color:#7a8081; font-size:11px; line-height:1.45; }
+.switchLink { margin:2px 0 0; color:#697273; font-size:12px; text-align:center; }
+.switchLink a { color:#1b6c80; font-weight:500; text-decoration:none; }
+.switchLink a:hover { text-decoration:underline; }
+.message { color:#1e7b4f; font-size:12px; }

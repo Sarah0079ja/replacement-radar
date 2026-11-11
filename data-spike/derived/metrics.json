@@ -1,0 +1,68 @@
+{
+  "property_sample": 5000,
+  "permit_records_downloaded": 41156,
+  "matched_properties": 777,
+  "address_match_rate_percent": 15.54,
+  "properties_with_hvac_mechanical_history_percent": 15.54,
+  "categories": {
+    "HVAC REPLACEMENT": 513,
+    "HVAC INSTALLATION": 110,
+    "NO RELEVANT PERMIT FOUND": 4223,
+    "AMBIGUOUS HVAC SIGNAL": 32,
+    "NON-HVAC MECHANICAL": 108,
+    "AMBIGUOUS MECHANICAL SIGNAL": 14
+  },
+  "opportunity_strengths": {
+    "STRONG": 18,
+    "MEDIUM": 399,
+    "WEAK": 4583
+  },
+  "evidence_confidences": {
+    "HIGH": 623,
+    "MEDIUM": 4362,
+    "LOW": 15
+  },
+  "score_distribution": {
+    "62": 18,
+    "59": 83,
+    "56": 101,
+    "53": 89,
+    "51": 7,
+    "50": 37,
+    "49": 1,
+    "48": 13,
+    "47": 11,
+    "46": 14,
+    "45": 5,
+    "44": 21,
+    "43": 5,
+    "42": 1,
+    "41": 7,
+    "39": 1,
+    "38": 2,
+    "36": 1,
+    "23": 992,
+    "20": 2570,
+    "18": 10,
+    "17": 625,
+    "14": 87,
+    "11": 57,
+    "8": 15,
+    "5": 74,
+    "3": 1,
+    "2": 103,
+    "0": 49
+  },
+  "properties_with_historical_hvac_event": 623,
+  "permit_status_field": "not published by Dallas OpenData dataset; retained as UNKNOWN",
+  "coverage_states": {
+    "SUPPORTED": 5000
+  },
+  "coverage_definition": "SUPPORTED means City of Dallas parcel layer CITY=DALLAS and ResCom=R; only SUPPORTED properties receive absence-of-permit points",
+  "top_100_generated": true,
+  "sources": {
+    "property": "https://maps.dcad.org/prdwa/rest/services/Property/ParcelQuery/MapServer/4/query",
+    "permits": "https://www.dallasopendata.com/resource/e7gq-4sah.json",
+    "retrieved_on": "2026-11-02"
+  }
+}
