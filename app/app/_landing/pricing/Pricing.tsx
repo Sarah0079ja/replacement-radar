@@ -41,7 +41,7 @@ export function Pricing({ howHref = "#how-it-works", level = "h2" }: { howHref?:
             ))}
           </ol>
           <p className={styles.also}>Also included: All Opportunities, map view and CSV export.</p>
-          <p className={styles.honest}>Replacement Radar prioritizes prospecting opportunities from available information.</p>
+          <p className={styles.honest}>ResponseHVAC prioritizes prospecting opportunities from available information.</p>
         </Reveal>
       </section>
     </div>

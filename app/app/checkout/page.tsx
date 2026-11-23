@@ -23,7 +23,7 @@ export default function CheckoutPage() {
   return (
     <main className={styles.page}>
       <section className={styles.authPanel} aria-labelledby="checkout-title">
-        <div className={styles.brand}><span className={styles.brandMark}>R</span><span>Replacement Radar</span></div>
+        <div className={styles.brand}><span className={styles.brandMark}>R</span><span>ResponseHVAC</span></div>
         <div className={styles.formIntro}>
           <p className={styles.kicker}>YOUR TRIAL STARTS HERE</p>
           <h1 id="checkout-title">A sharper week starts with your territory.</h1>
@@ -32,7 +32,7 @@ export default function CheckoutPage() {
         {error && <p className={styles.error} role="alert">{error}</p>}
         <div className={styles.demo}>
           <button className={styles.submit} type="button" onClick={startCheckout} disabled={busy}>{busy ? "Opening secure checkout…" : "Continue to secure checkout"}<span aria-hidden="true">↗</span></button>
-          <small>Your card is handled by Stripe. No card details are stored by Replacement Radar.</small>
+          <small>Your card is handled by Stripe. No card details are stored by ResponseHVAC.</small>
         </div>
         <p className={styles.footnote}>5-day trial · one plan · Texas HVAC intelligence</p>
       </section>

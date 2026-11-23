@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import styles from "./how.module.css";
 
-// How it works, drawn as a flow: information comes in on the left, Replacement Radar prioritizes in the middle, and
+// How it works, drawn as a flow: information comes in on the left, ResponseHVAC prioritizes in the middle, and
 // the week's list comes out on the right. Nodes are cards on a dotted canvas joined by bezier cables; comets run
 // along the connected cables once the section is on screen.
 
@@ -293,7 +293,7 @@ export function HowItWorks() {
           Records in. A ranked list out.
         </h2>
         <p className={styles.lede}>
-          Replacement Radar uses available property and HVAC-related information to surface the strongest opportunities
+          ResponseHVAC uses available property and HVAC-related information to surface the strongest opportunities
           in your service area, and hands your team a short list each week.
         </p>
       </div>
@@ -301,7 +301,7 @@ export function HowItWorks() {
       <div className={styles.frame}>
         <div className={styles.frameHead}>
           <div>
-            <span className={styles.crumb}>Replacement Radar</span>
+            <span className={styles.crumb}>ResponseHVAC</span>
             <strong>Flow</strong>
           </div>
           <span className={styles.status}>

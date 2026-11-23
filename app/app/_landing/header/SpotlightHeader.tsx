@@ -59,9 +59,9 @@ export function SpotlightHeader({ quiet = false }: { quiet?: boolean }) {
 
   return (
     <header className={`${styles.header} ${hostGrotesk.className} ${quiet ? styles.quiet : ""}`}>
-      <Link href="/" className={styles.wordmark} aria-label="Replacement Radar home">
+      <Link href="/" className={styles.wordmark} aria-label="ResponseHVAC home">
         <span className={styles.mark} aria-hidden="true" />
-        <span className={styles.wordmarkText}>Replacement Radar</span>
+        <span className={styles.wordmarkText}>ResponseHVAC</span>
       </Link>
       <div className={styles.stage}>
         <div ref={sceneRef} className={styles.scene}>

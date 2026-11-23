@@ -159,14 +159,14 @@ export default function SettingsPage() {
   };
 
   if (!supabase) {
-    return <main className={styles.page}><section className={styles.card}><p className={styles.kicker}>REPLACEMENT RADAR</p><h1>Settings need Supabase</h1><p className={styles.intro}>Configure Supabase to save service-area settings for a contractor workspace.</p><button className={styles.button} onClick={() => router.push("/dashboard")}>Back to This Week</button></section></main>;
+    return <main className={styles.page}><section className={styles.card}><p className={styles.kicker}>RESPONSEHVAC</p><h1>Settings need Supabase</h1><p className={styles.intro}>Configure Supabase to save service-area settings for a contractor workspace.</p><button className={styles.button} onClick={() => router.push("/dashboard")}>Back to This Week</button></section></main>;
   }
 
   return (
     <main className="settings-page">
       <div className="settings-shell">
         <div className="settings-topline">
-          <button className="settings-back" onClick={() => router.push("/dashboard")}>← Replacement Radar</button>
+          <button className="settings-back" onClick={() => router.push("/dashboard")}>← ResponseHVAC</button>
           <span>Texas contractor workspace</span>
         </div>
         <section className="settings-header">

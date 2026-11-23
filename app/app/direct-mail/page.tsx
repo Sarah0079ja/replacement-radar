@@ -206,7 +206,7 @@ function DirectMailNav({ router, workspaceName }: { router: ReturnType<typeof us
     <aside className="sidebar">
       <div className="brand-lockup">
         <div className="brand-mark" aria-hidden="true">R</div>
-        <div><div className="brand-name">Replacement Radar</div><div className="brand-subtitle">HVAC sales intelligence</div></div>
+        <div><div className="brand-name">ResponseHVAC</div><div className="brand-subtitle">HVAC sales intelligence</div></div>
       </div>
       <div className="workspace-label">WORKSPACE</div>
       <div className="workspace-switcher"><span className="workspace-dot" /> {workspaceName}</div>

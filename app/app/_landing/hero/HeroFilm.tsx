@@ -163,7 +163,7 @@ export function HeroFilm() {
           Know which homes to target this week.
         </h1>
         <p className={styles.lede}>
-          Replacement Radar uses available property and HVAC-related information to surface the homes in your territory
+          ResponseHVAC uses available property and HVAC-related information to surface the homes in your territory
           worth a closer look — with the evidence behind each one.
         </p>
         <div className={styles.actions}>

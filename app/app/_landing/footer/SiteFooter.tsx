@@ -33,9 +33,9 @@ export function SiteFooter() {
       <div className={styles.inner}>
         <div className={styles.top}>
           <div className={styles.brand}>
-            <Link href="/" className={styles.wordmark} aria-label="Replacement Radar home">
+        <Link href="/" className={styles.wordmark} aria-label="ResponseHVAC home">
               <span className={styles.mark} aria-hidden="true" />
-              Replacement Radar
+          ResponseHVAC
             </Link>
             <p>HVAC prospecting opportunities for Texas contractors.</p>
           </div>
@@ -55,7 +55,7 @@ export function SiteFooter() {
           </nav>
         </div>
         <div className={styles.bottom}>
-          <span>© 2026 Replacement Radar · Texas</span>
+          <span>© 2026 ResponseHVAC · Texas</span>
           <span className={styles.note}>Homes and figures shown are illustrative.</span>
         </div>
       </div>

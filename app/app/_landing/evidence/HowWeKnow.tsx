@@ -12,7 +12,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 // How we know, as one scroll story about one house on one street (7310 Larkspur Ln). The street is drawn in lines;
 // as you scroll, one roof lights up orange and the story follows that house: a verified record attaches → time
-// passes (inference) → the customer's view in Replacement Radar.
+// passes (inference) → the customer's view in ResponseHVAC.
 //
 // Desktop: a sticky SVG scene beside five copy blocks; ONE ScrollTrigger scrubs ONE master timeline whose time is
 // the beat (0…3), so the drawing transforms continuously with scroll. Phones and reduced motion: the copy and the
@@ -44,7 +44,7 @@ const BEATS: { tone: "neutral" | "verified" | "inference" | "product"; eyebrow: 
     title: "Your next replacement job is already on the map.",
     body: (
       <p>
-        Every street in your service area has homes ready for a new HVAC system or service. Replacement Radar finds
+        Every street in your service area has homes ready for a new HVAC system or service. ResponseHVAC finds
         them for you.
       </p>
     ),
@@ -66,7 +66,7 @@ const BEATS: { tone: "neutral" | "verified" | "inference" | "product"; eyebrow: 
     title: "Then we spot the homes that are due.",
     body: (
       <p>
-        {YEARS} years since the last HVAC replacement. Replacement Radar flags homes at that stage so your team reaches
+        {YEARS} years since the last HVAC replacement. ResponseHVAC flags homes at that stage so your team reaches
         them first.
       </p>
     ),
@@ -77,7 +77,7 @@ const BEATS: { tone: "neutral" | "verified" | "inference" | "product"; eyebrow: 
     title: "Your next job, ready to work.",
     body: (
       <p>
-        Replacement Radar puts homes like this in front of your team every week, prioritized and backed by the
+        ResponseHVAC puts homes like this in front of your team every week, prioritized and backed by the
         records, so you know exactly where to start.
       </p>
     ),

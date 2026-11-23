@@ -42,9 +42,9 @@ export default function TerritoryPage() {
 
   return <main className={styles.page}><section className={styles.card} aria-labelledby="territory-title">
     <div className={styles.mark}>R</div>
-    <p className={styles.kicker}>REPLACEMENT RADAR · TEXAS CONTRACTORS</p>
+    <p className={styles.kicker}>RESPONSEHVAC · TEXAS CONTRACTORS</p>
     <h1 id="territory-title">Check your service area.</h1>
-    <p className={styles.intro}>Enter the ZIP codes your team works. We’ll check whether Replacement Radar can serve that territory.</p>
+    <p className={styles.intro}>Enter the ZIP codes your team works. We’ll check whether ResponseHVAC can serve that territory.</p>
     <form onSubmit={check} className={styles.form}>
       <label>Service ZIP codes<input required inputMode="numeric" value={zips} onChange={(event) => setZips(event.target.value)} placeholder="75248, 75254" /></label>
       {error && <p className={styles.error} role="alert">{error}</p>}
@@ -53,7 +53,7 @@ export default function TerritoryPage() {
       {status !== "supported" && status !== "sent" && <button type="submit" disabled={status === "checking"}>{status === "checking" ? "Checking…" : "Check territory"}<span aria-hidden="true">→</span></button>}
     </form>
     {status === "review" && <form onSubmit={requestReview} className={styles.form} style={{ marginTop: 18 }}><label>Email for territory review<input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label><button type="submit">Request my territory <span aria-hidden="true">→</span></button></form>}
-    {status === "sent" && <p className={styles.switchLink}><Link href="/">Return to Replacement Radar</Link></p>}
+    {status === "sent" && <p className={styles.switchLink}><Link href="/">Return to ResponseHVAC</Link></p>}
     <p className={styles.switchLink}><Link href="/login">Already have an account? Sign in</Link></p>
   </section></main>;
 }

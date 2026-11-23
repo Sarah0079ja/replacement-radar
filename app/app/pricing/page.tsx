@@ -3,7 +3,7 @@ import { FinalCta, LandingFooter, Pricing } from "../_landing/pricing/Pricing";
 import styles from "../_landing/landing.module.css";
 
 export const metadata = {
-  title: "Pricing — Replacement Radar",
+  title: "Pricing — ResponseHVAC",
   description: "One plan for Texas HVAC contractors: $99/month after a 5-day free trial. Cancel anytime.",
 };
 

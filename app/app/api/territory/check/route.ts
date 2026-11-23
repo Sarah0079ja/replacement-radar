@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       zips,
       message: supported
         ? "Great — we can serve this territory."
-        : "Let's check your territory. We may be able to activate Replacement Radar for your service area. Send us your ZIP codes and we'll review the available property and HVAC data.",
+        : "Let's check your territory. We may be able to activate ResponseHVAC for your service area. Send us your ZIP codes and we'll review the available property and HVAC data.",
     });
   } catch {
     return NextResponse.json({

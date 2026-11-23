@@ -65,7 +65,7 @@ export async function createTestPostcard(sender: SenderSnapshot, recipient: Reci
     use_type: PscUseType.Marketing,
     front: postcardFrontHtml(sender),
     back: postcardBackHtml(sender, recipient),
-    description: "Replacement Radar M7-3 TEST postcard",
+    description: "ResponseHVAC M7-3 TEST postcard",
   });
 
   return getLobPostcardsClient("test").create(postcard, idempotencyKey);

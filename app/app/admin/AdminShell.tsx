@@ -5,7 +5,7 @@ import styles from "./admin.module.css";
 export default function AdminShell({ children, current }: { children: React.ReactNode; current: "overview" | "customers" }) {
   return <div className={styles.shell}>
     <aside className={styles.rail}>
-      <div className={styles.brand}><span className={styles.brandMark}>R</span><span>Replacement Radar</span></div>
+      <div className={styles.brand}><span className={styles.brandMark}>R</span><span>ResponseHVAC</span></div>
       <div className={styles.navGroup}>
         <p className={styles.railLabel}>Operator console</p>
         <nav className={styles.nav} aria-label="Admin navigation">

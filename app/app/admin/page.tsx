@@ -21,7 +21,7 @@ export default async function AdminOverviewPage() {
   return (
     <AdminShell current="overview">
       <header className={styles.topbar}>
-        <div><p className={styles.eyebrow}>OPERATIONS / OVERVIEW</p><h1 className={styles.title}>Replacement Radar Admin</h1><p className={styles.subtle}>Business overview, customers and subscription health.</p></div>
+        <div><p className={styles.eyebrow}>OPERATIONS / OVERVIEW</p><h1 className={styles.title}>ResponseHVAC Admin</h1><p className={styles.subtle}>Business overview, customers and subscription health.</p></div>
         <Link className={styles.primaryLink} href="/admin/customers">View customers <span aria-hidden="true">↗</span></Link>
       </header>
 

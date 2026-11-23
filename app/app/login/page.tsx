@@ -69,8 +69,8 @@ export default function LoginPage() {
   return (
     <main className={styles.page}>
       <section className={styles.authPanel} aria-labelledby="login-title">
-        <Link className={styles.brand} href="/" aria-label="Replacement Radar home"><span className={styles.brandMark}>R</span><span>Replacement Radar</span></Link>
-        <div className={styles.formIntro}><p className={styles.kicker}>WELCOME BACK</p><h1 id="login-title">Pick up where you left off.</h1><p className={styles.intro}>Sign in to your Replacement Radar account.</p></div>
+        <Link className={styles.brand} href="/" aria-label="ResponseHVAC home"><span className={styles.brandMark}>R</span><span>ResponseHVAC</span></Link>
+        <div className={styles.formIntro}><p className={styles.kicker}>WELCOME BACK</p><h1 id="login-title">Pick up where you left off.</h1><p className={styles.intro}>Sign in to your ResponseHVAC account.</p></div>
         {client ? (
           <form onSubmit={submit} className={styles.form}>
             <div className={styles.field}><label htmlFor="email">Email</label><input id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></div>
@@ -84,7 +84,7 @@ export default function LoginPage() {
         )}
         <p className={styles.footnote}>Texas HVAC prospecting intelligence.</p>
       </section>
-      <aside className={styles.visualPanel} aria-label="Replacement Radar territory visualization"><TerritoryVisualization /></aside>
+      <aside className={styles.visualPanel} aria-label="ResponseHVAC territory visualization"><TerritoryVisualization /></aside>
     </main>
   );
 }

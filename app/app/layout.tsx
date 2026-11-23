@@ -21,7 +21,7 @@ const instrumentSans = Instrument_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "HVAC Replacement Radar — Texas",
+  title: "ResponseHVAC — Texas",
   description: "Sales intelligence for ranking residential HVAC replacement prospects with transparent permit evidence",
 };
 

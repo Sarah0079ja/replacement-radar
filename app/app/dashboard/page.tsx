@@ -213,7 +213,7 @@ function downloadCsv(rows: Property[], statusFor: (parcel: string) => Status) {
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = "hvac-replacement-radar.csv";
+      anchor.download = "responsehvac-opportunities.csv";
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -697,7 +697,7 @@ function HomeContent() {
         <div className="brand-lockup">
           <div className="brand-mark" aria-hidden="true">R</div>
           <div>
-            <div className="brand-name">Replacement Radar</div>
+            <div className="brand-name">ResponseHVAC</div>
             <div className="brand-subtitle">HVAC sales intelligence</div>
           </div>
         </div>

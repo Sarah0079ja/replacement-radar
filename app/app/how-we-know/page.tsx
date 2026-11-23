@@ -4,9 +4,9 @@ import { LandingFooter } from "../_landing/pricing/Pricing";
 import styles from "../_landing/landing.module.css";
 
 export const metadata = {
-  title: "How we know — Replacement Radar",
+  title: "How we know — ResponseHVAC",
   description:
-    "See how Replacement Radar finds homes worth working, backed by recorded property and HVAC history.",
+    "See how ResponseHVAC finds homes worth working, backed by recorded property and HVAC history.",
 };
 
 export default function HowWeKnowPage() {
