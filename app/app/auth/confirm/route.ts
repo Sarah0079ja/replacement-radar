@@ -33,7 +33,9 @@ export async function GET(request: NextRequest) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 15 * 60,
-    path: "/reset-password",
+    // The reset page validates through /api/auth/recovery, so the marker must
+    // be available to both the page and its API route.
+    path: "/",
   });
   if (process.env.NODE_ENV !== "production") {
     console.info("[auth recovery] session established; redirecting to reset-password", { markerCreated: true, userPresent: true });

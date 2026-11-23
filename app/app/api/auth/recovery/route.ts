@@ -31,6 +31,6 @@ export async function POST(request: Request) {
   if (error) return NextResponse.json({ error: "PASSWORD_UPDATE_FAILED" }, { status: 400 });
 
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(recoveryCookie, "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 0, path: "/reset-password" });
+  response.cookies.set(recoveryCookie, "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 0, path: "/" });
   return response;
 }
