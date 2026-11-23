@@ -8,7 +8,7 @@ export function getStripeClient() {
   if (stripeClient) return stripeClient;
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("STRIPE_SECRET_KEY_NOT_CONFIGURED");
-  if (!key.startsWith("sk_test_")) throw new Error("STRIPE_TEST_KEY_REQUIRED");
+  if (!key.startsWith("sk_test_") && !key.startsWith("sk_live_")) throw new Error("STRIPE_KEY_INVALID");
   stripeClient = new Stripe(key);
   return stripeClient;
 }
