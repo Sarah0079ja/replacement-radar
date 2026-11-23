@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "seed:opportunities": "node --env-file=.env.seed.local scripts/seed-opportunities.mjs",
-    "ingest:austin": "node --env-file-if-exists=.env.local scripts/ingest-austin.mjs"
+    "ingest:austin": "node --env-file-if-exists=.env.local scripts/ingest-austin.mjs",
+    "ingest:dallas": "node --env-file-if-exists=.env.local scripts/ingest-dallas.mjs"
   },
   "dependencies": {
     "@lob/lob-typescript-sdk": "^1.4.2",
