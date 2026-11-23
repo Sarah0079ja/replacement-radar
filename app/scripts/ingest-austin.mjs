@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { randomUUID } from "node:crypto";
 import { AUSTIN_PILOT, normalizeAustinRecord } from "../lib/territories/austin.mjs";
 
 const supabase = createClient(
@@ -10,6 +11,13 @@ const SOURCE_URL = "https://data.austintexas.gov/resource/3syk-w9eu.json";
 const SOURCE_SYSTEM = AUSTIN_PILOT.sourceSystem;
 const PAGE_SIZE = 5000;
 const OVERLAP_DAYS = 14;
+const configuredDuration = (name, fallback) => {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+};
+const LOCK_TIMEOUT_MS = configuredDuration("AUSTIN_INGESTION_LOCK_TIMEOUT_MS", 30 * 60 * 1000);
+const HEARTBEAT_INTERVAL_MS = configuredDuration("AUSTIN_INGESTION_HEARTBEAT_INTERVAL_MS", 5 * 60 * 1000);
+const RUN_ID = randomUUID();
 const APPROVED_ACTIVE_ZIPS = new Set([
   "78701", "78702", "78703", "78704", "78705", "78722", "78731",
   "78741", "78751", "78752", "78756", "78757", "78758",
@@ -138,12 +146,59 @@ async function getCheckpoint(territoryId) {
   return created;
 }
 
-async function markCheckpoint(values) {
-  const { error } = await supabase
+async function markCheckpoint(values, requireLease = false) {
+  let query = supabase
     .from("territory_ingestion_checkpoints")
     .update({ ...values, updated_at: new Date().toISOString() })
     .eq("source_system", SOURCE_SYSTEM);
+  if (requireLease) query = query.eq("lease_id", RUN_ID);
+  const { data, error } = await query.select("source_system").maybeSingle();
   if (error) throw new Error("Austin checkpoint update failed");
+  if (requireLease && !data) throw new Error("Austin ingestion lease lost");
+}
+
+async function claimCheckpoint(checkpoint) {
+  const now = new Date().toISOString();
+  const runnableStatuses = ["NEVER_RUN", "SUCCEEDED", "FAILED"];
+  const { data: claimed, error } = await supabase
+    .from("territory_ingestion_checkpoints")
+    .update({ last_run_started_at: now, lease_id: RUN_ID, lease_heartbeat_at: now, last_run_status: "RUNNING", last_error: null, updated_at: now })
+    .eq("source_system", SOURCE_SYSTEM)
+    .in("last_run_status", runnableStatuses)
+    .select("source_system,last_run_started_at,last_run_status")
+    .maybeSingle();
+  if (error) throw new Error("Austin checkpoint claim failed");
+  if (claimed) return claimed;
+
+  const leaseTime = checkpoint.lease_heartbeat_at || checkpoint.last_run_started_at;
+  const leaseAge = leaseTime ? Date.now() - new Date(leaseTime).getTime() : NaN;
+  if (checkpoint.last_run_status !== "RUNNING" || !Number.isFinite(leaseAge) || leaseAge < LOCK_TIMEOUT_MS) {
+    return null;
+  }
+
+  let reclaimQuery = supabase
+    .from("territory_ingestion_checkpoints")
+    .update({ last_run_started_at: now, lease_id: RUN_ID, lease_heartbeat_at: now, last_run_status: "RUNNING", last_error: null, updated_at: now })
+    .eq("source_system", SOURCE_SYSTEM)
+    .eq("last_run_status", "RUNNING")
+    .eq("last_run_started_at", checkpoint.last_run_started_at);
+  reclaimQuery = checkpoint.lease_id ? reclaimQuery.eq("lease_id", checkpoint.lease_id) : reclaimQuery.is("lease_id", null);
+  const { data: reclaimed, error: reclaimError } = await reclaimQuery.select("source_system,last_run_started_at,last_run_status,lease_id").maybeSingle();
+  if (reclaimError) throw new Error("Austin stale checkpoint reclaim failed");
+  return reclaimed;
+}
+
+async function heartbeatLease() {
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("territory_ingestion_checkpoints")
+    .update({ lease_heartbeat_at: now, updated_at: now })
+    .eq("source_system", SOURCE_SYSTEM)
+    .eq("last_run_status", "RUNNING")
+    .eq("lease_id", RUN_ID)
+    .select("source_system")
+    .maybeSingle();
+  if (error || !data) throw new Error("Austin ingestion lease lost");
 }
 
 function latestCursor(rows) {
@@ -156,9 +211,24 @@ function latestCursor(rows) {
 
 const startedAt = new Date().toISOString();
 let checkpoint;
+let checkpointClaimed = false;
+let heartbeatTimer;
+let leaseLostError;
 try {
   const territory = await getTerritory();
   checkpoint = await getCheckpoint(territory.id);
+
+  if (!isIncremental) {
+    // Historical/bounded runs are intentionally not serialized by the live cursor.
+    // Scheduled and manual incremental runs must claim the shared checkpoint.
+  } else if (!await claimCheckpoint(checkpoint)) {
+    throw new Error("Austin ingestion already running");
+  } else {
+    checkpointClaimed = true;
+    heartbeatTimer = setInterval(() => {
+      void heartbeatLease().catch((error) => { leaseLostError = error; });
+    }, HEARTBEAT_INTERVAL_MS);
+  }
 
   const endDate = explicitEnd ? iso(explicitEnd) : new Date().toISOString();
   if (!endDate) throw new Error("Invalid end date");
@@ -167,10 +237,11 @@ try {
   if (isIncremental && checkpoint.cursor_status_date) startDate = subtractDays(checkpoint.cursor_status_date, checkpoint.overlap_days || OVERLAP_DAYS);
   const boundedBackfill = !isIncremental && (explicitStart || explicitEnd);
 
-  await markCheckpoint({ last_run_started_at: startedAt, last_run_status: "RUNNING", last_error: null });
+  if (!isIncremental) await markCheckpoint({ last_run_started_at: startedAt, last_run_status: "RUNNING", last_error: null });
   log("started", { mode: isIncremental ? "incremental" : "backfill", startDate, endDate, overlapDays: checkpoint.overlap_days || OVERLAP_DAYS });
 
   const sourceRows = await fetchAll(startDate, endDate, isIncremental);
+  if (leaseLostError) throw leaseLostError;
   const normalized = sourceRows.map((record) => normalizeAustinRecord(record, territory.id));
   const eligible = normalized.filter((row) => row.classification.isEligible);
   const opportunityByKey = new Map();
@@ -179,6 +250,7 @@ try {
     if (!existing || (row.event.event_date || "") > (existing.event.event_date || "")) opportunityByKey.set(row.opportunity.parcel_id, row);
   }
   const opportunities = [...opportunityByKey.values()].map((row) => row.opportunity);
+  if (isIncremental) await heartbeatLease();
   await upsertRows("opportunities", opportunities, "parcel_id");
 
   const savedOpportunities = [];
@@ -189,6 +261,7 @@ try {
   }
   const opportunityIds = new Map(savedOpportunities.map((row) => [row.parcel_id, row.id]));
   const events = eligible.map((row) => ({ ...row.event, opportunity_id: opportunityIds.get(row.opportunity.parcel_id) })).filter((row) => row.opportunity_id);
+  if (isIncremental) await heartbeatLease();
   await upsertRows("opportunity_evidence_events", events, "source_system,source_record_id");
 
   const observedZips = [...new Set(eligible.map((row) => row.event.property_zip).filter(Boolean))];
@@ -206,6 +279,7 @@ try {
   const classifications = {};
   for (const row of normalized) classifications[row.classification.eventType] = (classifications[row.classification.eventType] || 0) + 1;
   const cursor = latestCursor(sourceRows);
+  if (isIncremental) await heartbeatLease();
   await markCheckpoint({
     cursor_status_date: boundedBackfill ? checkpoint.cursor_status_date : cursor.date,
     cursor_source_record_id: boundedBackfill ? checkpoint.cursor_source_record_id : cursor.id,
@@ -216,10 +290,14 @@ try {
     last_run_unique_properties: opportunities.length,
     last_run_classifications: classifications,
     last_error: null,
-  });
+    lease_id: null,
+    lease_heartbeat_at: null,
+  }, isIncremental);
   log("completed", { sourceRecords: sourceRows.length, acceptedEvents: events.length, uniqueProperties: opportunities.length, classifications, observedZips: observedZips.length, cursor });
 } catch (error) {
-  if (checkpoint) await markCheckpoint({ last_run_status: "FAILED", last_error: error instanceof Error ? error.message : "Austin ingestion failed" }).catch(() => {});
+  if (checkpoint && (!isIncremental || checkpointClaimed)) await markCheckpoint({ last_run_status: "FAILED", last_error: error instanceof Error ? error.message : "Austin ingestion failed", lease_id: null, lease_heartbeat_at: null }, isIncremental).catch(() => {});
   log("failed", { reason: error instanceof Error ? error.message : "Austin ingestion failed" });
   process.exitCode = 1;
+} finally {
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
 }
