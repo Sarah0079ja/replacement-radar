@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { getSupabaseServerClient } from "../../../lib/supabase-server";
 import { pingLobTest } from "../../../lib/lob";
+import { requireAdminApi } from "../../../lib/admin";
+import { errorCategory, logOperationalError } from "../../../lib/operational-log";
 
 export const dynamic = "force-dynamic";
 
@@ -9,9 +10,8 @@ export async function GET() {
     return NextResponse.json({ error: "Unavailable in production" }, { status: 404 });
   }
 
-  const supabase = await getSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const access = await requireAdminApi();
+  if (!access.ok) return access.response;
 
   try {
     return NextResponse.json(await pingLobTest());
@@ -20,7 +20,7 @@ export async function GET() {
     if (message === "LOB_TEST_API_KEY_NOT_CONFIGURED") {
       return NextResponse.json({ error: "Lob TEST API key is not configured" }, { status: 503 });
     }
-    console.error("Lob test connectivity failed", { message });
+    logOperationalError("lob_test_connectivity", { mode: "test", category: errorCategory(error) });
     return NextResponse.json({ error: "Lob test connectivity failed" }, { status: 502 });
   }
 }

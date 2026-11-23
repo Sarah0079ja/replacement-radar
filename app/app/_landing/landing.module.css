@@ -1,0 +1,94 @@
+.page {
+  min-height: 100vh;
+  background: #070908;
+  color: #eef2ee;
+  font-family: var(--font-marketing), system-ui, sans-serif;
+}
+
+.close {
+  padding: clamp(80px, 12vh, 140px) clamp(16px, 5vw, 72px);
+  text-align: center;
+  background: radial-gradient(50% 70% at 50% 100%, rgba(255, 122, 85, 0.12), transparent 70%), #070908;
+}
+
+.close h2 {
+  margin: 0 auto;
+  max-width: 16em;
+  font-size: clamp(30px, 3.6vw, 48px);
+  font-weight: 500;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.close p {
+  margin: 16px 0 0;
+  font-size: 16px;
+  color: rgba(238, 242, 238, 0.62);
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  height: 48px;
+  margin-top: 30px;
+  padding: 0 24px;
+  border-radius: 999px;
+  background: #fff;
+  color: #111;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+}
+
+.cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 34px -12px rgba(255, 122, 85, 0.55);
+}
+
+.cta:focus-visible {
+  outline: 2px solid #ff7a55;
+  outline-offset: 4px;
+}
+
+
+/* The illustrative street carried into the close. */
+.street {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 14px;
+  width: fit-content;
+  margin: 0 auto 44px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(238, 242, 238, 0.14);
+}
+
+.street span {
+  width: 9px;
+  height: 9px;
+  background: rgba(238, 242, 238, 0.4);
+  clip-path: polygon(50% 0, 100% 46%, 100% 100%, 0 100%, 0 46%);
+}
+
+.street span:nth-child(5n + 1) {
+  background: #5fe39a;
+}
+
+@media (max-width: 560px) {
+  .street {
+    gap: 6px;
+  }
+
+  .street span {
+    width: 7px;
+    height: 7px;
+  }
+}
+
+/* The /pricing close: no street, less air. */
+.closeCompact {
+  padding: clamp(56px, 9vh, 96px) clamp(16px, 5vw, 72px) clamp(64px, 10vh, 110px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}

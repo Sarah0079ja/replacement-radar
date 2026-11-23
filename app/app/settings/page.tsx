@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 import styles from "../login/login.module.css";
 
-const WEEKLY_TARGETS = [25, 50, 100] as const;
+const WEEKLY_TARGETS = [50, 100, 250] as const;
 
 type ExpansionResult = {
   reason?: string;
@@ -41,7 +41,7 @@ export default function SettingsPage() {
   const [workspaceName, setWorkspaceName] = useState("Contractor workspace");
   const [supportedZips, setSupportedZips] = useState<string[]>([]);
   const [selectedZips, setSelectedZips] = useState<string[]>([]);
-  const [weeklyTarget, setWeeklyTarget] = useState<number>(25);
+  const [weeklyTarget, setWeeklyTarget] = useState<number>(50);
   const [loading, setLoading] = useState(Boolean(supabase));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -63,24 +63,31 @@ export default function SettingsPage() {
         return;
       }
 
-      const [{ data: workspaceRow, error: workspaceError }, { data: opportunities, error: opportunityError }] = await Promise.all([
+      const [{ data: workspaceRow, error: workspaceError }, coverageResponse] = await Promise.all([
         supabase.from("workspaces").select("name,service_zip_codes,weekly_target_size,mail_from_name,mail_from_address1,mail_from_address2,mail_from_city,mail_from_state,mail_from_zip,mail_from_phone,mail_from_website").eq("id", workspace).single(),
-        supabase.from("opportunities").select("property_zip"),
+        fetch("/api/territory/coverage", { cache: "no-store" }),
       ]);
-      if (workspaceError || opportunityError || !workspaceRow) {
+      if (workspaceError || !workspaceRow) {
         setError("We could not load your service-area settings. Please try again.");
         setLoading(false);
         return;
       }
 
-      const opportunityRows = (opportunities || []) as Array<{ property_zip: string | null }>;
-      const zips = Array.from(new Set(opportunityRows.map((row) => row.property_zip).filter((zip): zip is string => Boolean(zip)))).sort();
+      let zips: string[] = [];
+      if (coverageResponse.ok) {
+        const coverage = await coverageResponse.json() as { zips?: string[] };
+        zips = coverage.zips || [];
+      } else {
+        // Compatibility fallback while the additive coverage migration is being applied.
+        const { data: opportunities } = await supabase.from("opportunities").select("property_zip");
+        zips = Array.from(new Set<string>((opportunities || []).map((row: { property_zip: string | null }) => row.property_zip).filter((zip: string | null): zip is string => Boolean(zip)))).sort();
+      }
       const configured = (workspaceRow.service_zip_codes || []).filter((zip: string) => zips.includes(zip));
       setWorkspaceId(workspace);
       setWorkspaceName(workspaceRow.name || "Contractor workspace");
       setSupportedZips(zips);
       setSelectedZips(configured);
-      setWeeklyTarget(workspaceRow.weekly_target_size || 25);
+      setWeeklyTarget([50, 100, 250].includes(workspaceRow.weekly_target_size) ? workspaceRow.weekly_target_size : 50);
       setSender({
         name: workspaceRow.mail_from_name || "",
         address1: workspaceRow.mail_from_address1 || "",
@@ -152,15 +159,15 @@ export default function SettingsPage() {
   };
 
   if (!supabase) {
-    return <main className={styles.page}><section className={styles.card}><p className={styles.kicker}>REPLACEMENT RADAR</p><h1>Settings need Supabase</h1><p className={styles.intro}>Configure Supabase to save service-area settings for a contractor workspace.</p><button className={styles.button} onClick={() => router.push("/")}>Back to This Week</button></section></main>;
+    return <main className={styles.page}><section className={styles.card}><p className={styles.kicker}>REPLACEMENT RADAR</p><h1>Settings need Supabase</h1><p className={styles.intro}>Configure Supabase to save service-area settings for a contractor workspace.</p><button className={styles.button} onClick={() => router.push("/dashboard")}>Back to This Week</button></section></main>;
   }
 
   return (
     <main className="settings-page">
       <div className="settings-shell">
         <div className="settings-topline">
-          <button className="settings-back" onClick={() => router.push("/")}>← Replacement Radar</button>
-          <span>Dallas contractor workspace</span>
+          <button className="settings-back" onClick={() => router.push("/dashboard")}>← Replacement Radar</button>
+          <span>Texas contractor workspace</span>
         </div>
         <section className="settings-header">
           <p className="eyebrow"><span className="eyebrow-dot" /> WORKSPACE SETTINGS</p>
@@ -172,7 +179,7 @@ export default function SettingsPage() {
           <>
             <section className="settings-section" aria-labelledby="service-area-heading">
               <div className="settings-section-heading">
-                <div><h2 id="service-area-heading">Where do you work?</h2><p>Select the Dallas ZIP codes your company serves.</p></div>
+                <div><h2 id="service-area-heading">Where do you work?</h2><p>Select the ZIP codes your company serves.</p></div>
                 <span className="settings-count">{selectionLabel}</span>
               </div>
               <div className="zip-grid">
@@ -213,7 +220,7 @@ export default function SettingsPage() {
 
             {error && <p className="settings-error" role="alert">{error}</p>}
             {savedMessage && <p className="settings-success" role="status">{savedMessage}</p>}
-            <div className="settings-actions"><button className="primary-button" onClick={saveSettings} disabled={saving}>{saving ? "Saving…" : "Save settings"}</button><button className="secondary-button" onClick={() => router.push("/")}>Back to This Week</button></div>
+            <div className="settings-actions"><button className="primary-button" onClick={saveSettings} disabled={saving}>{saving ? "Saving…" : "Save settings"}</button><button className="secondary-button" onClick={() => router.push("/dashboard")}>Back to This Week</button></div>
           </>
         )}
       </div>

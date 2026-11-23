@@ -1,0 +1,559 @@
+/* How we know: one scroll story about one house. Architectural line drawing on ink; moss = verified,
+   orange = inference, stone = unknown. Desktop pins the scene beside the copy; phones stack beat by beat. */
+.page {
+  --ink: #070908;
+  --lit: #5fe39a;
+  --orange: #ff7a55;
+  --stone: #9aa19c;
+  --paper: #eef2ee;
+  --paper-dim: rgba(238, 242, 238, 0.62);
+  --hair: rgba(238, 242, 238, 0.1);
+  --mono: var(--font-mono), ui-monospace, monospace;
+  --gutter: clamp(16px, 5vw, 72px);
+  overflow-x: clip;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-marketing), system-ui, sans-serif;
+}
+
+/* ------------------------------------------------------------------ Copy */
+.eyebrow {
+  margin: 0 0 16px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.tone_neutral .eyebrow {
+  color: rgba(238, 242, 238, 0.5);
+}
+
+.tone_verified .eyebrow,
+.tone_product .eyebrow {
+  color: var(--lit);
+}
+
+.tone_inference .eyebrow {
+  color: var(--orange);
+}
+
+.tone_unknown .eyebrow {
+  color: var(--stone);
+}
+
+.beatCopy {
+  max-width: 440px;
+}
+
+.beatTitle {
+  margin: 0;
+  font-size: clamp(30px, 3vw, 44px);
+  font-weight: 500;
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+}
+
+.beatBody p {
+  margin: 16px 0 0;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--paper-dim);
+}
+
+.beatBody .mono {
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: var(--paper);
+}
+
+.beatBody .quiet {
+  margin-top: 10px;
+  font-size: 15px;
+  color: rgba(238, 242, 238, 0.5);
+}
+
+.beatBody .statement {
+  margin-top: 28px;
+  padding-left: 16px;
+  border-left: 2px solid var(--stone);
+  font-size: clamp(22px, 2vw, 28px);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--paper);
+}
+
+/* ------------------------------------------------------------------ Desktop: sticky story */
+.track {
+  display: grid;
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+  column-gap: clamp(32px, 4vw, 64px);
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.beat {
+  display: flex;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+.stageCol {
+  position: relative;
+}
+
+.stage {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  height: 100vh;
+  height: 100svh;
+  padding-top: 70px;
+}
+
+/* ------------------------------------------------------------------ The scene */
+.scene {
+  position: relative;
+  width: 100%;
+}
+
+.world {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+}
+
+.world text {
+  font-family: var(--mono);
+}
+
+.page [data-draw],
+.leader,
+.inferenceLine {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+.house path {
+  fill: none;
+  stroke: rgba(238, 242, 238, 0.82);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The aerial pencil sketch. Faces are filled with near-ink so nearer houses hide those behind them; side walls a
+   touch lighter (pencil shading); roads a faint grey band. */
+.sketch path {
+  stroke: rgba(238, 242, 238, 0.7);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.subject path {
+  stroke: rgba(238, 242, 238, 0.92);
+  stroke-width: 1.2;
+}
+
+.k_wall,
+.k_roof,
+.k_canopy,
+.k_car {
+  fill: #080a09;
+}
+
+.k_shade {
+  fill: #161a18;
+}
+
+.k_roofBack {
+  fill: #111412;
+}
+
+.sketch .k_detail {
+  fill: none;
+  stroke: rgba(238, 242, 238, 0.45);
+  stroke-width: 0.8;
+}
+
+.sketch .k_trunk {
+  fill: none;
+  stroke: rgba(238, 242, 238, 0.45);
+}
+
+.sketch .k_canopy {
+  stroke: rgba(238, 242, 238, 0.6);
+}
+
+.roadFill {
+  fill: #121614;
+}
+
+.roadEdge {
+  fill: none;
+  stroke: rgba(238, 242, 238, 0.24);
+  stroke-width: 1;
+}
+
+.roadDash {
+  fill: none;
+  stroke: rgba(238, 242, 238, 0.2);
+  stroke-dasharray: 5 6;
+}
+
+/* Road labels knock the dashed centre line out behind them. */
+.world .streetName,
+.world .addressRoad {
+  paint-order: stroke;
+  stroke: var(--ink);
+  stroke-width: 16px;
+  stroke-linejoin: round;
+}
+
+.world .streetName {
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  fill: rgba(238, 242, 238, 0.4);
+  text-anchor: middle;
+}
+
+.world .addressRoad {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  fill: var(--orange);
+  text-anchor: middle;
+}
+
+.curbMark {
+  stroke: var(--orange);
+  stroke-width: 2;
+}
+
+.sun {
+  fill: none;
+  stroke: rgba(238, 242, 238, 0.5);
+  stroke-width: 1.2;
+}
+
+.unitSolid rect,
+.unitSolid circle {
+  fill: none;
+  stroke: rgba(238, 242, 238, 0.6);
+  stroke-width: 1.4;
+}
+
+.unitUnknown path {
+  fill: var(--ink);
+  stroke: var(--stone);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+}
+
+.unitUnknown text {
+  fill: var(--stone);
+  font-family: var(--font-marketing), system-ui, sans-serif;
+  font-size: 11px;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.record path {
+  fill: rgba(95, 227, 154, 0.05);
+  stroke: var(--lit);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+}
+
+.record .recordRule {
+  fill: none;
+  stroke: rgba(95, 227, 154, 0.4);
+}
+
+.recordSmall {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  fill: var(--lit);
+}
+
+.recordBig {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  fill: var(--paper);
+}
+
+.tag {
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+}
+
+.tagVerified {
+  fill: var(--lit);
+}
+
+.tagUnknown {
+  fill: var(--stone);
+}
+
+.leader {
+  fill: none;
+  stroke: var(--lit);
+  stroke-width: 1.2;
+}
+
+.attach {
+  fill: var(--lit);
+}
+
+.inferenceLine {
+  fill: none;
+  stroke: var(--orange);
+  stroke-width: 2;
+}
+
+.tickVerified {
+  stroke: var(--lit);
+  stroke-width: 2;
+}
+
+.small {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+.smallVerified {
+  fill: var(--lit);
+  text-anchor: middle;
+}
+
+.smallInference {
+  fill: var(--orange);
+  text-anchor: middle;
+}
+
+.smallUnknown {
+  fill: var(--stone);
+  text-anchor: middle;
+}
+
+.end {
+  text-anchor: end;
+}
+
+.world .note {
+  font-family: var(--font-marketing), system-ui, sans-serif;
+  font-size: 12px;
+  fill: rgba(238, 242, 238, 0.5);
+  text-anchor: middle;
+}
+
+.stop {
+  stroke: var(--stone);
+  stroke-width: 2;
+}
+
+.unknownLeader {
+  stroke: var(--stone);
+  stroke-dasharray: 3 3;
+}
+
+
+/* The customer's view: the product's own detail UI (global classes). */
+.panelWrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.panel {
+  width: min(440px, 76%);
+  padding: 24px;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--text);
+  font-family: var(--font-sans), "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: 0 50px 100px -50px rgba(0, 0, 0, 0.85);
+  pointer-events: auto;
+}
+
+.panelTitle {
+  margin: 7px 0 0;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.panelEvidence {
+  padding-top: 18px;
+}
+
+.panelEvidence :global(.evidence-stack) {
+  margin-top: 14px;
+}
+
+/* ------------------------------------------------------------------ Phones / reduced motion: stacked */
+.stack {
+  padding: 120px var(--gutter) 24px;
+}
+
+.stackBeat {
+  padding: 32px 0 48px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.stackBeat:last-child {
+  border-bottom: 0;
+}
+
+.stackScene {
+  margin-top: 22px;
+}
+
+@media (min-width: 861px) {
+  /* Reduced motion on a wide screen: each beat as copy beside its final scene. */
+  .stackBeat {
+    display: grid;
+    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+    gap: 56px;
+    align-items: center;
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+
+  .stackScene {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 860px) {
+  /* The drawing scales down on phones, so its labels scale up inside it to stay readable (~9–14px). */
+  .world .small,
+  .world .tag {
+    font-size: 17px;
+    letter-spacing: 0.05em;
+  }
+
+  .world .note {
+    font-size: 16px;
+  }
+
+  .world .recordSmall {
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
+
+  .world .recordBig {
+    font-size: 18px;
+    letter-spacing: 0.02em;
+  }
+
+  .world .streetName,
+  .world .addressRoad {
+    font-size: 16px;
+    letter-spacing: 0.06em;
+  }
+
+  .beatTitle {
+    font-size: 30px;
+  }
+
+  .beatBody p {
+    font-size: 16px;
+  }
+
+  .panelWrap {
+    justify-content: center;
+  }
+
+  .panel {
+    width: 94%;
+    padding: 18px;
+  }
+}
+
+/* ------------------------------------------------------------------ CTA */
+.cta {
+  padding: clamp(80px, 11vh, 120px) var(--gutter) clamp(90px, 12vh, 130px);
+  border-top: 1px solid rgba(238, 242, 238, 0.05);
+  text-align: center;
+}
+
+.ctaTitle {
+  margin: 0;
+  font-size: clamp(34px, 4vw, 56px);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+}
+
+.ctaLede {
+  margin: 18px auto 0;
+  max-width: 28em;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--paper-dim);
+}
+
+.ctaActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px 26px;
+  margin-top: 30px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  height: 50px;
+  padding: 0 26px;
+  border-radius: 999px;
+  background: #fff;
+  color: #111;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.secondary {
+  font-size: 14px;
+  color: var(--paper-dim);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.secondary:hover {
+  color: var(--paper);
+}
+
+.button:focus-visible,
+.secondary:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .secondary {
+    transition: none;
+  }
+}

@@ -211,13 +211,13 @@ function DirectMailNav({ router, workspaceName }: { router: ReturnType<typeof us
       <div className="workspace-label">WORKSPACE</div>
       <div className="workspace-switcher"><span className="workspace-dot" /> {workspaceName}</div>
       <nav aria-label="Primary navigation" className="primary-nav">
-        <button className="nav-item" onClick={() => router.push("/")}>▸ This Week</button>
-        <button className="nav-item" onClick={() => router.push("/?view=opportunities")}>≡ All Opportunities</button>
+        <button className="nav-item" onClick={() => router.push("/dashboard")}>▸ This Week</button>
+        <button className="nav-item" onClick={() => router.push("/dashboard?view=opportunities")}>≡ All Opportunities</button>
         <button className="nav-item nav-active" aria-current="page">✉ Direct Mail</button>
         <button className="nav-item" onClick={() => router.push("/settings")}>⚙ Settings</button>
       </nav>
       <div className="sidebar-bottom">
-        <div className="coverage-note"><span className="status-dot" /> Dallas coverage active<div className="coverage-detail">City of Dallas parcel universe</div></div>
+        <div className="coverage-note"><span className="status-dot" /> Coverage active<div className="coverage-detail">Supported service-area data</div></div>
       </div>
     </aside>
   );
@@ -251,7 +251,7 @@ export default function DirectMailPage() {
   const [reason, setReason] = useState<string | undefined>();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sender, setSender] = useState<SenderSettings | null>(null);
-  const [workspaceName, setWorkspaceName] = useState("Dallas contractor workspace");
+  const [workspaceName, setWorkspaceName] = useState("Contractor workspace");
   const [recentMail, setRecentMail] = useState<Record<string, RecentMail>>({});
   const [campaigns, setCampaigns] = useState<CampaignHistory[]>([]);
   const [campaignRecipients, setCampaignRecipients] = useState<CampaignRecipient[]>([]);
@@ -294,7 +294,7 @@ export default function DirectMailPage() {
         .eq("id", workspaceId)
         .single();
       if (workspaceError) throw new Error("We could not load your sender settings.");
-      setWorkspaceName(workspace.name || "Dallas contractor workspace");
+      setWorkspaceName(workspace.name || "Contractor workspace");
       setSender({
         name: workspace.mail_from_name,
         address1: workspace.mail_from_address1,
@@ -447,7 +447,7 @@ export default function DirectMailPage() {
       {supabase && <DirectMailNav router={router} workspaceName={workspaceName} />}
       <main className="sheet">
         <header className="topbar">
-          <div className="breadcrumbs"><span>Dallas</span><span className="breadcrumb-separator">/</span><strong>Direct Mail</strong></div>
+          <div className="breadcrumbs"><span>Service area</span><span className="breadcrumb-separator">/</span><strong>Direct Mail</strong></div>
           <div className="topbar-actions"><span className="refresh-note">M7 · targeted postcard workflow</span></div>
         </header>
         <div className="content">
@@ -464,7 +464,7 @@ export default function DirectMailPage() {
             <section className="campaign-builder" aria-busy={loading}>
               <div className="builder-toolbar"><div><p className="eyebrow">NEW CAMPAIGN · CURRENT WEEK ONLY</p><h2>Choose homes to mail</h2><p>Select from the persisted This Week cohort. Selection stays on this device until postcard preview is available.</p></div><button className="secondary-button" onClick={() => { setBuilderOpen(false); setSelectedIds(new Set()); }}>Back to campaigns</button></div>
 
-              {loading ? <div className="direct-mail-state" role="status">Loading this week’s prospects…</div> : error ? <div className="direct-mail-state direct-mail-error" role="alert"><strong>{error}</strong><button className="secondary-button" onClick={() => void loadBuilder()}>Try again</button></div> : reason === "NO_SERVICE_AREA" ? <div className="direct-mail-state" role="status"><strong>No service area configured</strong><span>Set up your territory before choosing homes for a mailing.</span><button className="secondary-button" onClick={() => router.push("/settings")}>Set up territory →</button></div> : !cohort ? <div className="direct-mail-state" role="status"><strong>No current weekly list</strong><span>Open This Week to generate the current prospect list before creating a mailing.</span><button className="secondary-button" onClick={() => router.push("/")}>Open This Week →</button></div> : previewOpen && sender ? <PostcardPreview sender={sender} member={selectedMembers[0]} recipientCount={selectedMembers.length} cost={previewCost} error={previewError} loading={previewLoading} onBack={() => setPreviewOpen(false)} onRetry={() => void openPreview()} hasRecentMail={selectedHasRecentMail} onSend={sendCampaign} sendLoading={sendLoading} sendError={sendError} sendResult={sendResult} /> : (
+              {loading ? <div className="direct-mail-state" role="status">Loading this week’s prospects…</div> : error ? <div className="direct-mail-state direct-mail-error" role="alert"><strong>{error}</strong><button className="secondary-button" onClick={() => void loadBuilder()}>Try again</button></div> : reason === "NO_SERVICE_AREA" ? <div className="direct-mail-state" role="status"><strong>No service area configured</strong><span>Set up your territory before choosing homes for a mailing.</span><button className="secondary-button" onClick={() => router.push("/settings")}>Set up territory →</button></div> : !cohort ? <div className="direct-mail-state" role="status"><strong>No current weekly list</strong><span>Open This Week to generate the current prospect list before creating a mailing.</span><button className="secondary-button" onClick={() => router.push("/dashboard")}>Open This Week →</button></div> : previewOpen && sender ? <PostcardPreview sender={sender} member={selectedMembers[0]} recipientCount={selectedMembers.length} cost={previewCost} error={previewError} loading={previewLoading} onBack={() => setPreviewOpen(false)} onRetry={() => void openPreview()} hasRecentMail={selectedHasRecentMail} onSend={sendCampaign} sendLoading={sendLoading} sendError={sendError} sendResult={sendResult} /> : (
                 <>
                   {!senderIsComplete && <div className="sender-warning" role="status"><div><strong>Complete your return address before postcard preview.</strong><span>Direct Mail uses your business sender identity. You can still review and select homes now.</span></div><button className="secondary-button" onClick={() => router.push("/settings")}>Open Settings →</button></div>}
                   <div className="builder-summary"><div><span className="stat-label">SELECTED RECIPIENTS</span><strong>{selectedMembers.length}</strong></div><span>{members.length} homes in this week’s cohort</span></div>

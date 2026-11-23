@@ -1,9 +1,11 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
+import { requireEligibleWorkspace } from "../../../lib/billing";
 import { createTestPostcard, type RecipientSnapshot, type SenderSnapshot } from "../../../lib/direct-mail";
 import { getLobPricePerPieceCents } from "../../../lib/lob";
 import { getSupabaseAdminClient } from "../../../lib/supabase-admin";
 import { getSupabaseServerClient } from "../../../lib/supabase-server";
+import { errorCategory, logOperationalError } from "../../../lib/operational-log";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +63,7 @@ function recipientName(opportunity: OpportunityRow) {
 }
 
 function currentChicagoWeekStart() {
-  // Dallas-MVP behavior. Make this configurable per workspace/market later.
+  // Texas launch behavior. Derive market-specific address semantics from normalized data later.
   const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
   const year = Number(parts.find((part) => part.type === "year")?.value);
   const month = Number(parts.find((part) => part.type === "month")?.value);
@@ -104,8 +106,8 @@ function idempotencyKey(workspaceId: string, cohortId: string, opportunityIds: s
 
 export async function POST(request: Request) {
   const userClient = await getSupabaseServerClient();
-  const { data: { user } } = await userClient.auth.getUser();
-  if (!user) return NextResponse.json({ error: "AUTHENTICATION_REQUIRED" }, { status: 401 });
+  const access = await requireEligibleWorkspace(userClient);
+  if (!access.ok) return access.response;
 
   let body: SendRequest;
   try { body = await request.json() as SendRequest; } catch { return NextResponse.json({ error: "INVALID_SEND_REQUEST" }, { status: 400 }); }
@@ -117,9 +119,7 @@ export async function POST(request: Request) {
   const selectionRule = SELECTION_RULES.includes(body.selection_rule as typeof SELECTION_RULES[number]) ? body.selection_rule as typeof SELECTION_RULES[number] : "CUSTOM";
   const requestedMode = body.mode === "live" ? "live" : "test";
 
-  const { data: memberships, error: membershipError } = await userClient.from("memberships").select("workspace_id,created_at").order("created_at", { ascending: true }).order("workspace_id", { ascending: true });
-  const workspaceId = memberships?.[0]?.workspace_id;
-  if (membershipError || !workspaceId) return NextResponse.json({ error: "NO_WORKSPACE" }, { status: 403 });
+  const workspaceId = access.context.workspace.workspaceId;
 
   let admin;
   try { admin = getSupabaseAdminClient(); } catch { return NextResponse.json({ error: "SERVER_CONFIGURATION_ERROR" }, { status: 500 }); }
@@ -205,6 +205,7 @@ export async function POST(request: Request) {
         const { data: mailedRow, error: mailedUpdateError } = await admin.from("outreach_recipients").update({ status: "MAILED", provider_mail_piece_id: providerPostcard.id, updated_at: new Date().toISOString() }).eq("id", recipient.id).eq("send_claim_token", claimToken).select("id").single();
         if (mailedUpdateError || !mailedRow) return NextResponse.json({ error: "PROVIDER_ACCEPTED_PERSISTENCE_PENDING" }, { status: 500 });
       } catch (providerError) {
+        logOperationalError("direct_mail_provider", { mode: mode.mode, workspace_id: workspaceId, category: errorCategory(providerError) });
         const { data: failedRow, error: failedUpdateError } = await admin.from("outreach_recipients").update({ status: "FAILED", failure_reason: safeProviderFailure(providerError), failed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", recipient.id).eq("send_claim_token", claimToken).select("id").single();
         if (failedUpdateError || !failedRow) return NextResponse.json({ error: "SEND_FAILURE_PERSISTENCE_PENDING" }, { status: 500 });
       }

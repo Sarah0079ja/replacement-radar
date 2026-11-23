@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { requireEligibleWorkspace } from "../../lib/billing";
 import { getSupabaseServerClient } from "../../lib/supabase-server";
+import { logOperationalError } from "../../lib/operational-log";
 
 export const dynamic = "force-dynamic";
 
@@ -9,8 +11,8 @@ export async function GET() {
   }
 
   const supabase = await getSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const access = await requireEligibleWorkspace(supabase);
+  if (!access.ok) return access.response;
 
   const { data, error } = await supabase.rpc("generate_current_week_cohort");
   if (error) {
@@ -20,7 +22,7 @@ export async function GET() {
     if (error.message.includes("NO_WORKSPACE")) {
       return NextResponse.json({ error: "No contractor workspace is available" }, { status: 403 });
     }
-    console.error("Weekly cohort generation failed", error);
+    logOperationalError("weekly_cohort_generation", { category: error.name || "DatabaseError" });
     return NextResponse.json({ error: "Weekly prospect list could not be generated" }, { status: 500 });
   }
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireEligibleWorkspace } from "../../../lib/billing";
 import { getLobPricePerPieceCents } from "../../../lib/lob";
 import { getSupabaseServerClient } from "../../../lib/supabase-server";
 
@@ -29,17 +30,8 @@ function text(value: unknown) {
 
 export async function POST(request: Request) {
   const supabase = await getSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "AUTHENTICATION_REQUIRED" }, { status: 401 });
-
-  const { data: memberships, error: membershipError } = await supabase
-    .from("memberships")
-    .select("workspace_id,created_at")
-    .order("created_at", { ascending: true })
-    .order("workspace_id", { ascending: true });
-  if (membershipError || !memberships?.[0]?.workspace_id) {
-    return NextResponse.json({ error: "NO_WORKSPACE" }, { status: 403 });
-  }
+  const access = await requireEligibleWorkspace(supabase);
+  if (!access.ok) return access.response;
 
   let body: { sender?: PreviewSender; recipients?: PreviewRecipient[] };
   try {

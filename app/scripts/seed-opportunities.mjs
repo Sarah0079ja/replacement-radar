@@ -7,6 +7,14 @@ const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!url || !key) throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required");
 const client = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 const source = path.join(process.cwd(), "app", "data", "properties.json");
+const { data: dallasTerritory, error: territoryError } = await client
+  .from("coverage_territories")
+  .select("id")
+  .eq("territory_key", "dallas")
+  .maybeSingle();
+if (territoryError) throw territoryError;
+if (!dallasTerritory?.id) throw new Error("Dallas coverage territory is not seeded; apply the territory migrations first");
+
 const rows = JSON.parse(fs.readFileSync(source, "utf8")).map((row) => ({
   parcel_id: row.parcel_id,
   address: row.address,
@@ -38,6 +46,10 @@ const rows = JSON.parse(fs.readFileSync(source, "utf8")).map((row) => ({
   source_evidence: { source: "Dallas OpenData + DCAD", coverage_state: row.coverage_state },
   reasons: row.reasons,
   coverage_state: row.coverage_state,
+  territory_id: dallasTerritory.id,
+  jurisdiction_key: "city_of_dallas",
+  source_system: "dallas_opendata_dcad",
+  source_property_id: row.parcel_id,
 }));
 const { error } = await client.from("opportunities").upsert(rows, { onConflict: "parcel_id" });
 if (error) throw error;

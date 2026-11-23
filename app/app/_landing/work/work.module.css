@@ -1,0 +1,481 @@
+/* Work the list: a quiet dark canvas after the light product preview. Thin rules, type and one small property label;
+   the motion carries it. Moss = normal / done, orange = the appointment moment and hover only. */
+.section {
+  --ink: #070908;
+  --lit: #5fe39a;
+  --orange: #ff7a55;
+  --paper: #eef2ee;
+  --paper-dim: rgba(238, 242, 238, 0.6);
+  --hair: rgba(238, 242, 238, 0.14);
+  --mono: var(--font-mono), ui-monospace, monospace;
+  --track-y: 84px;
+  --prop-y: 112px;
+  position: relative;
+  padding: clamp(100px, 14vh, 150px) clamp(16px, 5vw, 72px) clamp(90px, 12vh, 130px);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-marketing), system-ui, sans-serif;
+  border-top: 1px solid rgba(238, 242, 238, 0.05);
+}
+
+.inner {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+/* ---- Copy ---- */
+.eyebrow {
+  margin: 0 0 18px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lit);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(46px, 5.6vw, 84px);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+.lede {
+  margin: 22px 0 0;
+  max-width: 30em;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--paper-dim);
+}
+
+/* ---- The workflow ---- */
+.flow {
+  position: relative;
+  height: 350px;
+  margin-top: clamp(64px, 9vh, 96px);
+}
+
+.track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--track-y);
+  height: 1px;
+  background: var(--hair);
+  transform-origin: left center;
+}
+
+.progress {
+  position: absolute;
+  inset: 0;
+  background: var(--lit);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+/* The short stretch that warms at APPOINTMENT (between CONTACTED and APPOINTMENT). */
+.warm {
+  position: absolute;
+  top: 0;
+  left: 40%;
+  width: 10%;
+  height: 1px;
+  background: var(--orange);
+  opacity: 0;
+  visibility: hidden;
+}
+
+.stations {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.station {
+  position: relative;
+  height: 330px;
+  padding-right: 24px;
+  outline: none;
+}
+
+.num {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  color: rgba(238, 242, 238, 0.3);
+}
+
+.state {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: clamp(17px, 1.6vw, 22px);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(238, 242, 238, 0.32);
+  transition:
+    color 0.45s ease,
+    box-shadow 0.3s ease;
+}
+
+.done .state {
+  color: rgba(238, 242, 238, 0.55);
+}
+
+.active .state {
+  color: var(--paper);
+}
+
+/* WON: moss completes it; one tiny orange point is the only warmth. */
+.won.active .state::after {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 0 0.25em 10px;
+  vertical-align: middle;
+  background: var(--orange);
+}
+
+.hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--paper-dim);
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+.live .station:hover .hint,
+.live .station:focus-visible .hint,
+.live .branch:hover .hint,
+.live .branch:focus-visible .hint {
+  opacity: 1;
+  transform: none;
+}
+
+.live .station:hover .state,
+.live .station:focus-visible .state {
+  box-shadow: inset 0 -1px 0 var(--orange);
+}
+
+.marker {
+  position: absolute;
+  left: 0;
+  top: calc(var(--track-y) - 4px);
+  width: 9px;
+  height: 9px;
+  border: 1px solid rgba(238, 242, 238, 0.35);
+  background: var(--ink);
+  transition:
+    background-color 0.45s ease,
+    border-color 0.45s ease,
+    transform 0.45s ease;
+}
+
+.done .marker,
+.active .marker {
+  border-color: var(--lit);
+  background: var(--lit);
+}
+
+.active .marker {
+  transform: scale(1.35);
+}
+
+.appointment.active .marker {
+  border-color: var(--orange);
+  background: var(--orange);
+}
+
+/* Where the property rests at each station (measured once by the timeline). */
+.anchor {
+  position: absolute;
+  left: 0;
+  top: var(--prop-y);
+  width: 1px;
+  height: 1px;
+}
+
+/* NOT INTERESTED: a muted branch down from the line between CONTACTED and APPOINTMENT. */
+.branch {
+  position: absolute;
+  left: 40%;
+  top: var(--track-y);
+  display: flex;
+  flex-direction: column;
+  outline: none;
+}
+
+.branchLine {
+  display: block;
+  width: 0;
+  height: 196px;
+  border-left: 1px dashed rgba(238, 242, 238, 0.2);
+}
+
+.branch strong {
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  color: rgba(238, 242, 238, 0.4);
+}
+
+.branch .hint {
+  max-width: 16em;
+}
+
+/* ---- The property: a compact editorial label, not a card ---- */
+.property {
+  position: absolute;
+  left: 0;
+  top: var(--prop-y);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  width: 236px;
+  padding: 12px 16px 12px 16px;
+  border-left: 2px solid var(--lit);
+  background: rgba(7, 9, 8, 0.92);
+}
+
+.from {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(238, 242, 238, 0.42);
+}
+
+.address {
+  margin-top: 6px;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.priority {
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--lit);
+}
+
+.record {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--paper-dim);
+}
+
+.record b {
+  margin-left: 4px;
+  font-weight: 500;
+  color: var(--paper);
+}
+
+.foot {
+  position: relative;
+  height: 30px;
+  margin-top: 12px;
+  border-top: 1px solid var(--hair);
+}
+
+.footLine {
+  position: absolute;
+  left: 0;
+  top: 10px;
+  white-space: nowrap;
+  font-size: 12.5px;
+  color: var(--paper);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.footLine em {
+  margin-right: 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-style: normal;
+  letter-spacing: 0.1em;
+  color: var(--lit);
+  transition: color 0.35s ease;
+}
+
+.footOn {
+  opacity: 1;
+}
+
+.propertyWarm .footLine em {
+  color: var(--orange);
+}
+
+/* ---- The week after ---- */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 8px 0 0;
+  border-top: 1px solid var(--hair);
+}
+
+.summary div {
+  padding: 20px 18px 0 0;
+}
+
+.summary dt {
+  min-height: 30px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: rgba(238, 242, 238, 0.5);
+}
+
+.summary dt em {
+  display: block;
+  margin-top: 2px;
+  font-size: 9.5px;
+  font-style: normal;
+  letter-spacing: 0.02em;
+  color: rgba(238, 242, 238, 0.32);
+}
+
+.summary dd {
+  margin: 10px 0 0;
+  font-size: clamp(30px, 3vw, 40px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.statWon dd {
+  color: var(--lit);
+}
+
+/* ---------------------------------------------------------------- Phone: the same story, downward */
+@media (max-width: 760px) {
+  .section {
+    --prop-y: 74px;
+  }
+
+  .lede {
+    font-size: 16px;
+  }
+
+  .flow {
+    height: auto;
+    margin-top: 52px;
+  }
+
+  .track {
+    left: 4px;
+    right: auto;
+    top: 4px;
+    bottom: 196px;
+    width: 1px;
+    height: auto;
+    transform-origin: center top;
+  }
+
+  .progress {
+    transform: scaleY(0);
+    transform-origin: center top;
+  }
+
+  .warm {
+    left: 0;
+    top: 40%;
+    width: 1px;
+    height: 10%;
+  }
+
+  .stations {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .station {
+    height: 236px;
+    padding: 0 0 0 30px;
+  }
+
+  .num {
+    display: inline;
+    margin-right: 10px;
+  }
+
+  .state {
+    margin-top: 0;
+    font-size: 18px;
+  }
+
+  .hint {
+    margin-top: 4px;
+    font-size: 12.5px;
+    opacity: 0.7;
+    transform: none;
+  }
+
+  .marker {
+    top: 0;
+  }
+
+  .anchor {
+    left: 30px;
+  }
+
+  .property {
+    left: 30px;
+    width: min(270px, calc(100% - 30px));
+  }
+
+  /* NOT INTERESTED sits to the side of CONTACTED. */
+  .branch {
+    left: auto;
+    right: 0;
+    top: 236px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .branchLine {
+    width: 22px;
+    height: 0;
+    border-left: 0;
+    border-top: 1px dashed rgba(238, 242, 238, 0.24);
+  }
+
+  .branch strong {
+    margin-top: 0;
+    font-size: 9.5px;
+  }
+
+  .branch .hint {
+    display: none;
+  }
+
+  .summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 18px;
+    margin-top: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .state,
+  .hint,
+  .marker,
+  .footLine,
+  .footLine em {
+    transition: none;
+  }
+}

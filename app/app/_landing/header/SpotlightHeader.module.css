@@ -1,0 +1,273 @@
+/* The spotlight tab bar as a page header. Tokens follow the spec (design px × --u); the bar sits near the top of the
+   window and the beam's cone runs off the top edge. */
+.header {
+  --u: 0.84px;
+  --bar-top: 92;
+  --bar-y: calc(var(--bar-top) * var(--u));
+  --bar-h: calc(62 * var(--u));
+  --bar-radius: calc(31 * var(--u));
+  --bar-glass: #ffffff;
+  --bar-shadow: 0 var(--u) calc(2 * var(--u)) rgba(20, 20, 30, 0.04),
+    0 calc(12 * var(--u)) calc(32 * var(--u)) calc(-18 * var(--u)) rgba(20, 20, 30, 0.14);
+  --rimlight-y: calc(-1 * var(--u));
+  --rimlight-h: calc(2 * var(--u));
+  --rimlight-radius: calc(2 * var(--u));
+  --rimlight: radial-gradient(closest-side, rgba(242, 84, 45, 0.85), rgba(242, 84, 45, 0));
+  --pill-y: calc(7 * var(--u));
+  --pill-h: calc(48 * var(--u));
+  --pill-radius: calc(24 * var(--u));
+  --active-glass: #111111;
+  --active-shadow: 0 calc(12 * var(--u)) calc(24 * var(--u)) calc(-10 * var(--u)) rgba(0, 0, 0, 0.4);
+  --hover-glass: #f3f3f4;
+  --hover-ring: calc(1.2 * var(--u)) dashed rgba(17, 17, 17, 0.26);
+  --tab-size: calc(15.5 * var(--u));
+  --tab-pad: calc(21 * var(--u));
+  --tab-gap: calc(10 * var(--u));
+  --icon-size: calc(18 * var(--u));
+  --tab-ink: #77777c;
+  --focus: #111;
+
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 50;
+  height: calc((var(--bar-top) + 140) * var(--u));
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wordmark {
+  position: absolute;
+  left: clamp(16px, 4vw, 56px);
+  top: calc(var(--bar-y) + var(--bar-h) / 2);
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
+/* A lot outline with a lit interior. */
+.mark {
+  position: relative;
+  width: 14px;
+  height: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  border-radius: 2px;
+}
+
+.mark::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 1px;
+  background: #ff7a55;
+}
+
+.stage {
+  position: absolute;
+  top: 0;
+  left: calc(50% - 540 * var(--u));
+  width: calc(1080 * var(--u));
+  height: 100%;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+}
+
+.scene[data-ready] {
+  visibility: visible;
+}
+
+/* The beam's foot sits 8 px inside the bar's top edge; its upper cone runs off the top of the window. */
+.beam {
+  --x: 0;
+  position: absolute;
+  left: calc(var(--x) * var(--u));
+  top: calc((var(--bar-top) + 8 - 400) * var(--u));
+  width: calc(360 * var(--u));
+  height: calc(400 * var(--u));
+  pointer-events: none;
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+.floor {
+  --x: 0;
+  --w: 0;
+  position: absolute;
+  left: calc(var(--x) * var(--u));
+  top: calc((var(--bar-top) + 46) * var(--u));
+  width: calc(var(--w) * var(--u));
+  height: calc(60 * var(--u));
+  border-radius: 50%;
+  filter: blur(calc(18 * var(--u)));
+  pointer-events: none;
+}
+
+.bar {
+  --x: 0;
+  --w: 0;
+  position: absolute;
+  left: calc(var(--x) * var(--u));
+  top: var(--bar-y);
+  width: calc(var(--w) * var(--u));
+  height: var(--bar-h);
+  border-radius: var(--bar-radius);
+  background: var(--bar-glass);
+  box-shadow: var(--bar-shadow);
+  pointer-events: auto;
+}
+
+.rimlight {
+  --x: 0;
+  --w: 0;
+  position: absolute;
+  left: calc(var(--x) * var(--u));
+  top: var(--rimlight-y);
+  width: calc(var(--w) * var(--u));
+  height: var(--rimlight-h);
+  border-radius: var(--rimlight-radius);
+  pointer-events: none;
+  background: var(--rimlight);
+}
+
+.pill {
+  --x: 0;
+  --w: 0;
+  position: absolute;
+  left: calc(var(--x) * var(--u));
+  top: var(--pill-y);
+  width: calc(var(--w) * var(--u));
+  height: var(--pill-h);
+  border-radius: var(--pill-radius);
+}
+
+.active {
+  background: var(--active-glass);
+  box-shadow: var(--active-shadow);
+}
+
+.caustic {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--pill-radius);
+  pointer-events: none;
+}
+
+.hover {
+  background: var(--hover-glass);
+  opacity: 0;
+}
+
+.hoverRing {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: var(--hover-ring);
+  pointer-events: none;
+}
+
+.tab {
+  --x: 0;
+  --w: 0;
+  position: absolute;
+  left: calc(var(--x) * var(--u));
+  top: 0;
+  width: calc(var(--w) * var(--u));
+  height: var(--bar-h);
+  display: flex;
+  align-items: center;
+  gap: var(--tab-gap);
+  padding: 0 var(--tab-pad);
+  font-size: var(--tab-size);
+  font-weight: 500;
+  letter-spacing: -0.013em;
+  white-space: nowrap;
+  color: var(--tab-ink);
+  text-decoration: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.icon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  flex: none;
+  filter: none !important;
+}
+
+.tab:focus-visible::after {
+  content: "";
+  position: absolute;
+  inset: calc(3 * var(--u)) calc(-4 * var(--u));
+  border-radius: calc(28 * var(--u));
+  outline: calc(2 * var(--u)) solid var(--focus);
+  pointer-events: none;
+}
+
+/* What the controller measures: the tabs at the design's own size (px, not --u), never shown. */
+.probe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1080px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.probeTab {
+  position: absolute;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 21px;
+  font-size: 15.5px;
+  font-weight: 500;
+  letter-spacing: -0.013em;
+  white-space: nowrap;
+}
+
+.probeIcon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+/* Phones: icons only (each link keeps its name through aria-label); the probe hides labels too, so the bar measures
+   the same layout it shows. */
+@media (max-width: 720px) {
+  .header {
+    --u: 0.86px;
+    --bar-top: 74;
+  }
+
+  .label {
+    display: none;
+  }
+
+  .tab,
+  .probeTab {
+    gap: 0;
+  }
+
+  .wordmarkText {
+    display: none;
+  }
+}
+
+/* Quiet bar (/pricing): no beam or floor glow behind the tabs. */
+.quiet .beam,
+.quiet .floor {
+  display: none;
+}

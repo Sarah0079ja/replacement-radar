@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { requireEligibleWorkspace } from "../../../lib/billing";
 import { getSupabaseServerClient } from "../../../lib/supabase-server";
+import { logOperationalError } from "../../../lib/operational-log";
 
 export const dynamic = "force-dynamic";
 
@@ -9,8 +11,8 @@ export async function POST(request: Request) {
   }
 
   const supabase = await getSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const access = await requireEligibleWorkspace(supabase);
+  if (!access.ok) return access.response;
 
   let body: { new_target?: unknown };
   try {
@@ -20,7 +22,7 @@ export async function POST(request: Request) {
   }
 
   const newTarget = body.new_target;
-  if (typeof newTarget !== "number" || !Number.isInteger(newTarget) || newTarget < 1 || newTarget > 500) {
+  if (typeof newTarget !== "number" || !Number.isInteger(newTarget) || ![50, 100, 250].includes(newTarget)) {
     return NextResponse.json({ error: "Invalid weekly target" }, { status: 400 });
   }
 
@@ -29,7 +31,7 @@ export async function POST(request: Request) {
     if (error.message.includes("AUTHENTICATION_REQUIRED")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (error.message.includes("NO_WORKSPACE")) return NextResponse.json({ error: "No contractor workspace is available" }, { status: 403 });
     if (error.message.includes("INVALID_TARGET")) return NextResponse.json({ error: "Invalid weekly target" }, { status: 400 });
-    console.error("Weekly cohort expansion failed", error);
+    logOperationalError("weekly_cohort_expansion", { category: error.name || "DatabaseError" });
     return NextResponse.json({ error: "Weekly prospect list could not be expanded" }, { status: 500 });
   }
 

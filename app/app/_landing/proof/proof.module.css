@@ -1,0 +1,403 @@
+/* Product proof. The product itself is styled by the app's own global classes (globals.css); this file only places
+   it in the dark marketing environment and adds the section's few orange accents (attention, never decoration). */
+.section {
+  --ink: #070908;
+  --lit: #5fe39a;
+  --orange: #ff7a55;
+  --orange-ui: #ef6a43;
+  --paper: #eef2ee;
+  --paper-dim: rgba(238, 242, 238, 0.62);
+  --hair: rgba(238, 242, 238, 0.14);
+  --mono: var(--font-mono), ui-monospace, monospace;
+  --col: clamp(250px, 24vw, 340px);
+  position: relative;
+  padding: clamp(110px, 15vh, 150px) clamp(16px, 5vw, 72px) clamp(90px, 12vh, 130px);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-marketing), system-ui, sans-serif;
+  overflow: hidden;
+}
+
+.inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--col) minmax(0, 1fr);
+  grid-template-areas:
+    "copy copy"
+    "rule rule"
+    "aside stage";
+  column-gap: clamp(32px, 3vw, 48px);
+  max-width: 1340px;
+  margin: 0 auto;
+}
+
+/* ---- Opening copy ---- */
+.copy {
+  grid-area: copy;
+  max-width: 640px;
+}
+
+.eyebrow {
+  margin: 0 0 18px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lit);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(48px, 6.2vw, 92px);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+.lede {
+  margin: 22px 0 0;
+  max-width: 28em;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--paper);
+}
+
+.small {
+  margin: 10px 0 0;
+  max-width: 34em;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--paper-dim);
+}
+
+/* The entrance rule: the one long orange line in the section. */
+.rule {
+  grid-area: rule;
+  display: block;
+  width: 64%;
+  height: 1px;
+  margin: 44px 0 48px;
+  background: linear-gradient(90deg, var(--orange) 30%, rgba(255, 122, 85, 0.45));
+  transform-origin: left center;
+}
+
+/* ---- Beside the product ---- */
+/* Top-aligned with the product in the same grid row: one two-column composition. */
+.aside {
+  grid-area: aside;
+  align-self: start;
+  position: relative;
+  z-index: 1;
+}
+
+.why {
+  display: inline-block;
+  margin: 0 0 16px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--orange);
+}
+
+.asideTitle {
+  margin: 0;
+  font-size: clamp(26px, 2.3vw, 32px);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.asideBody {
+  margin: 12px 0 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--paper-dim);
+}
+
+.points {
+  display: grid;
+  margin: 22px 0 0;
+}
+
+.points div {
+  padding: 11px 0;
+  border-top: 1px solid var(--hair);
+}
+
+.points dt {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper);
+}
+
+.points dd {
+  margin: 5px 0 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--paper-dim);
+}
+
+/* The contextual link to /how-we-know. */
+.howLink {
+  display: inline-block;
+  margin-top: 18px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--paper);
+  text-decoration: none;
+  border-bottom: 1px solid var(--hair);
+  padding-bottom: 4px;
+  transition: border-color 0.3s ease;
+}
+
+.howLink:hover,
+.howLink:focus-visible {
+  border-color: var(--orange);
+  outline: none;
+}
+
+/* The signature line: from the focused row to "Why this home?", then gone. */
+.sig {
+  position: absolute;
+  height: 1px;
+  background: var(--orange);
+  transform-origin: right center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ---- The product: the light This Week screen as an object in the dark room ---- */
+.stage {
+  grid-area: stage;
+  position: relative;
+  min-width: 0;
+}
+
+.product {
+  position: relative;
+  height: 700px;
+  padding: 28px 28px 0;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--text);
+  font-family: var(--font-sans), "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: 0 60px 120px -60px rgba(0, 0, 0, 0.85);
+}
+
+/* The list continues past the crop. */
+.product::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  height: 96px;
+  background: linear-gradient(rgba(255, 255, 255, 0), #fff 85%);
+  pointer-events: none;
+}
+
+.productH1 {
+  margin-top: 8px;
+}
+
+.tableWrap {
+  overflow: hidden;
+}
+
+.row {
+  transition: opacity 0.5s ease;
+}
+
+.row td {
+  transition:
+    background-color 0.5s ease,
+    box-shadow 0.5s ease;
+}
+
+.dimmed .row:not(.focusRow) {
+  opacity: 0.42;
+}
+
+.live .row {
+  cursor: pointer;
+}
+
+.live .row:hover {
+  opacity: 1;
+}
+
+.live .row:hover td:first-child {
+  box-shadow: inset 2px 0 0 rgba(239, 106, 67, 0.45);
+}
+
+.row.focusRow td {
+  background: #fff6f0;
+}
+
+.row.focusRow td:first-child {
+  box-shadow: inset 3px 0 0 var(--orange-ui);
+}
+
+/* The drawer opens inside the preview (the real one is a fixed overlay). */
+.drawer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.open {
+  pointer-events: auto;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(19, 20, 22, 0.18);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.open .backdrop {
+  opacity: 1;
+}
+
+.drawer .panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(470px, 52%);
+  height: auto;
+  padding: 24px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  box-shadow: -28px 0 50px -36px rgba(19, 20, 22, 0.4);
+  transform: translateX(104%);
+  transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.open .panel {
+  transform: none;
+}
+
+.note {
+  margin: 14px 0 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: rgba(238, 242, 238, 0.38);
+}
+
+/* ---- Phone preview (hidden on larger screens) ---- */
+.mobile {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- Tablet */
+@media (max-width: 1099px) {
+  .inner {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "copy"
+      "rule"
+      "stage"
+      "aside";
+  }
+
+  .aside {
+    max-width: 560px;
+    margin-top: 44px;
+  }
+
+  .drawer .panel {
+    width: min(440px, 60%);
+  }
+
+  .sig {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------- Phone */
+@media (max-width: 760px) {
+  .title {
+    font-size: 46px;
+  }
+
+  .lede {
+    font-size: 16.5px;
+  }
+
+  .rule {
+    width: 80%;
+    margin: 32px 0 30px;
+  }
+
+  .stage {
+    display: none;
+  }
+
+  .mobile {
+    display: block;
+    grid-area: stage;
+    color: var(--text);
+    font-family: var(--font-sans), "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .mobile .note {
+    margin-top: 12px;
+  }
+
+  .mcard {
+    transition:
+      box-shadow 0.5s ease,
+      background-color 0.5s ease;
+  }
+
+  .mcard.mcardFocus {
+    background: #fffaf6;
+    box-shadow: inset 3px 0 0 var(--orange-ui);
+  }
+
+  .mobile .mdetail {
+    width: 100%;
+    height: auto;
+    margin-top: 10px;
+    padding: 18px 16px 6px;
+    overflow: visible;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .mdetail :global(.detail-priority-row) {
+    flex-wrap: wrap;
+  }
+
+  .aside {
+    margin-top: 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .row td,
+  .backdrop,
+  .drawer .panel,
+  .mcard {
+    transition: none;
+  }
+}

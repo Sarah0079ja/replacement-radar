@@ -1,0 +1,585 @@
+.section {
+  --ink: #070908;
+  --panel: #0a0d0c;
+  --lit: #5fe39a;
+  --lit-soft: rgba(95, 227, 154, 0.55);
+  --paper: #eef2ee;
+  --paper-dim: rgba(238, 242, 238, 0.6);
+  position: relative;
+  padding: clamp(80px, 12vh, 140px) clamp(16px, 5vw, 72px) clamp(80px, 12vh, 130px);
+  background:
+    radial-gradient(60% 50% at 70% 40%, rgba(95, 227, 154, 0.08), transparent 70%),
+    var(--ink);
+  color: var(--paper);
+  font-family: var(--font-marketing), system-ui, sans-serif;
+  scroll-margin-top: 40px;
+}
+
+.intro {
+  max-width: 1120px;
+  margin: 0 auto 44px;
+}
+
+.eyebrow {
+  margin: 0 0 16px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lit);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(32px, 4vw, 54px);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+}
+
+.lede {
+  margin: 18px 0 0;
+  max-width: 36em;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--paper-dim);
+}
+
+/* The workspace frame around the flow. It is the container the canvas's units are measured against. */
+.frame {
+  container-type: inline-size;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 clamp(12px, 2vw, 24px) clamp(12px, 2vw, 24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  background:
+    radial-gradient(70% 60% at 20% 0%, rgba(95, 227, 154, 0.07), transparent 70%),
+    var(--panel);
+  box-shadow: 0 40px 120px -40px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.frameHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 6px 18px;
+}
+
+.frameHead strong {
+  display: block;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.crumb {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: var(--paper-dim);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid rgba(95, 227, 154, 0.3);
+  border-radius: 999px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--lit);
+}
+
+.status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lit);
+  box-shadow: 0 0 10px var(--lit);
+}
+
+/* ---- The canvas: one design px is --d ---- */
+.canvas {
+  --d: calc(100cqw / var(--design));
+  position: relative;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  background-color: #080b0a;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1.3px);
+  background-size: calc(20 * var(--d)) calc(20 * var(--d));
+  background-position: calc(10 * var(--d)) calc(10 * var(--d));
+}
+
+.tall {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .wide {
+    display: none;
+  }
+
+  .tall {
+    display: block;
+  }
+}
+
+.cables {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.cables path {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.cablePending {
+  stroke: rgba(255, 255, 255, 0.24);
+  stroke-width: 1.4;
+  stroke-dasharray: 0.7 0.9;
+  transition: opacity 0.6s ease calc(var(--delay) + 0.9s);
+}
+
+.cable,
+.cableGlow {
+  stroke: var(--lit);
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: 100;
+  transition: stroke-dashoffset 1s cubic-bezier(0.65, 0, 0.35, 1) calc(var(--delay) + 0.2s);
+}
+
+.cable {
+  stroke-width: 2;
+}
+
+.cableGlow {
+  stroke-width: 7;
+  opacity: 0.45;
+}
+
+.cometHead,
+.cometTail {
+  opacity: 0;
+}
+
+.cometHead {
+  stroke: #effff5;
+  stroke-width: 3.4;
+  stroke-dasharray: 1.2 200;
+}
+
+.cometTail {
+  stroke: var(--lit);
+  stroke-width: 3;
+  stroke-dasharray: 14 200;
+}
+
+.live .cablePending {
+  opacity: 0;
+}
+
+.live .cable,
+.live .cableGlow {
+  stroke-dashoffset: 0;
+}
+
+.live .cometHead {
+  animation: comet 3.4s linear calc(var(--delay) + 1.2s) infinite;
+}
+
+.live .cometTail {
+  animation: tail 3.4s linear calc(var(--delay) + 1.2s) infinite;
+}
+
+/* Each comet crosses its cable in the first 40% of the loop, so the second cable picks up as the first one lands. */
+@keyframes comet {
+  0% {
+    stroke-dashoffset: 1.2;
+    opacity: 1;
+  }
+  40% {
+    stroke-dashoffset: -100;
+    opacity: 1;
+  }
+  41%,
+  100% {
+    stroke-dashoffset: -100;
+    opacity: 0;
+  }
+}
+
+@keyframes tail {
+  0% {
+    stroke-dashoffset: 14;
+    opacity: 0.55;
+  }
+  40% {
+    stroke-dashoffset: -86;
+    opacity: 0.55;
+  }
+  44%,
+  100% {
+    stroke-dashoffset: -100;
+    opacity: 0;
+  }
+}
+
+/* ---- Nodes ---- */
+.node {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  padding: calc(12 * var(--d));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: calc(20 * var(--d));
+  background: linear-gradient(180deg, #181d1a 0%, #101412 100%);
+  box-shadow: 0 calc(18 * var(--d)) calc(40 * var(--d)) calc(-18 * var(--d)) rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  opacity: 0;
+  transform: translateY(calc(10 * var(--d)));
+  transition: opacity 0.6s ease calc(var(--i) * 90ms), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i) * 90ms),
+    border-color 0.6s ease 2.2s, box-shadow 0.6s ease 2.2s;
+}
+
+.live .node {
+  opacity: 1;
+  transform: none;
+}
+
+.live .nodeLit {
+  border-color: rgba(95, 227, 154, 0.85);
+  box-shadow: 0 0 0 1px rgba(95, 227, 154, 0.35), 0 0 calc(40 * var(--d)) rgba(95, 227, 154, 0.22),
+    0 calc(18 * var(--d)) calc(40 * var(--d)) calc(-18 * var(--d)) rgba(0, 0, 0, 0.8);
+}
+
+.folder {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin-bottom: calc(10 * var(--d));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: calc(12 * var(--d));
+  background: #0b0f0d;
+  overflow: hidden;
+}
+
+/* The folder's back tab, like a file folder seen from the front. */
+.folder::before {
+  content: "";
+  position: absolute;
+  left: calc(10 * var(--d));
+  top: calc(-1 * var(--d));
+  width: 34%;
+  height: calc(8 * var(--d));
+  border-radius: 0 0 calc(6 * var(--d)) calc(6 * var(--d));
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tag {
+  position: absolute;
+  left: calc(10 * var(--d));
+  bottom: calc(8 * var(--d));
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: calc(9.5 * var(--d));
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(238, 242, 238, 0.72);
+}
+
+.nodeTitle {
+  font-size: calc(14.5 * var(--d));
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.nodeSub {
+  margin-top: calc(2 * var(--d));
+  font-size: calc(11.5 * var(--d));
+  color: var(--paper-dim);
+}
+
+.port {
+  position: absolute;
+  z-index: 1;
+  width: calc(10 * var(--d));
+  height: calc(10 * var(--d));
+  margin: calc(-5 * var(--d));
+  border: 1.5px solid rgba(255, 255, 255, 0.32);
+  border-radius: 50%;
+  background: #0b0f0d;
+  transition: background-color 0.4s ease 1.2s, border-color 0.4s ease 1.2s, box-shadow 0.4s ease 1.2s;
+}
+
+.left {
+  left: 0;
+  top: 50%;
+}
+
+.right {
+  left: 100%;
+  top: 50%;
+}
+
+.top {
+  left: 50%;
+  top: 0;
+}
+
+.bottom {
+  left: 50%;
+  top: 100%;
+}
+
+.live .portOn {
+  border-color: var(--lit);
+  background: var(--lit);
+  box-shadow: 0 0 calc(12 * var(--d)) var(--lit-soft);
+}
+
+/* ---- Folder previews ---- */
+.preview {
+  position: absolute;
+  inset: calc(14 * var(--d)) calc(10 * var(--d)) calc(26 * var(--d));
+}
+
+.previewLots {
+  border-radius: calc(4 * var(--d));
+  background-image:
+    linear-gradient(90deg, rgba(95, 227, 154, 0.5) 1px, transparent 1px),
+    linear-gradient(rgba(95, 227, 154, 0.5) 1px, transparent 1px);
+  background-size: calc(14 * var(--d)) calc(22 * var(--d));
+  -webkit-mask-image: radial-gradient(120% 120% at 30% 20%, #000 30%, transparent 85%);
+  mask-image: radial-gradient(120% 120% at 30% 20%, #000 30%, transparent 85%);
+  opacity: 0.7;
+}
+
+.previewPermits {
+  display: flex;
+  align-items: flex-end;
+  gap: calc(4 * var(--d));
+  border-bottom: 1px solid rgba(95, 227, 154, 0.35);
+}
+
+.previewPermits span {
+  flex: 1;
+  border-radius: calc(2 * var(--d)) calc(2 * var(--d)) 0 0;
+  background: linear-gradient(to top, rgba(95, 227, 154, 0.75), rgba(95, 227, 154, 0.15));
+}
+
+.previewTiers {
+  display: grid;
+  align-content: center;
+  gap: calc(5 * var(--d));
+}
+
+.previewTiers span {
+  display: block;
+  padding: calc(2 * var(--d)) calc(6 * var(--d));
+  border-radius: calc(4 * var(--d));
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: calc(8.5 * var(--d));
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0b1a12;
+  background: var(--lit);
+}
+
+.previewTiers span:nth-child(2) {
+  background: rgba(95, 227, 154, 0.55);
+}
+
+.previewTiers span:nth-child(3) {
+  background: rgba(95, 227, 154, 0.25);
+  color: rgba(238, 242, 238, 0.75);
+}
+
+.previewList {
+  display: grid;
+  align-content: center;
+  gap: calc(7 * var(--d));
+}
+
+.previewList span {
+  display: block;
+  height: calc(9 * var(--d));
+  border-radius: calc(3 * var(--d));
+  background: linear-gradient(90deg, rgba(95, 227, 154, 0.75) 0 14%, rgba(255, 255, 255, 0.12) 14% 100%);
+}
+
+/* ---- The result: this week's list ---- */
+.result {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  padding: calc(16 * var(--d)) calc(18 * var(--d)) calc(14 * var(--d));
+  border: 1px solid rgba(160, 255, 200, 0.35);
+  border-radius: calc(22 * var(--d));
+  background: linear-gradient(160deg, #3a9a63 0%, #22663f 60%, #1b5233 100%);
+  box-shadow: 0 0 calc(60 * var(--d)) rgba(95, 227, 154, 0.18), 0 calc(24 * var(--d)) calc(60 * var(--d)) calc(-24 * var(--d)) rgba(0, 0, 0, 0.8);
+  opacity: 0.35;
+  filter: saturate(0.4);
+  transition: opacity 0.8s ease 2.1s, filter 0.8s ease 2.1s;
+}
+
+.live .result {
+  opacity: 1;
+  filter: none;
+}
+
+.resultHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: calc(8 * var(--d));
+}
+
+.resultHead strong {
+  display: block;
+  font-size: calc(15 * var(--d));
+  font-weight: 500;
+}
+
+.resultHead span {
+  font-size: calc(11 * var(--d));
+  color: rgba(238, 255, 244, 0.72);
+}
+
+.ready {
+  padding: calc(3 * var(--d)) calc(10 * var(--d));
+  border-radius: 999px;
+  background: #8af5b8;
+  color: #0b2a18 !important;
+  font-weight: 600;
+}
+
+.resultBody {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: calc(14 * var(--d));
+}
+
+.dotNumber {
+  width: calc(96 * var(--d));
+  height: auto;
+}
+
+.dotOn {
+  fill: #effff5;
+}
+
+.dotOff {
+  fill: rgba(255, 255, 255, 0.16);
+}
+
+.resultCaption {
+  max-width: 7em;
+  font-size: calc(12.5 * var(--d));
+  line-height: 1.3;
+  color: rgba(238, 255, 244, 0.85);
+}
+
+.ruler {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: calc(14 * var(--d));
+}
+
+.ruler span {
+  width: 1px;
+  height: 45%;
+  background: rgba(238, 255, 244, 0.55);
+}
+
+.ruler .tickTall {
+  height: 100%;
+}
+
+.rulerMark {
+  position: absolute;
+  right: 6%;
+  bottom: calc(-7 * var(--d));
+  width: 0;
+  height: 0;
+  border-left: calc(4 * var(--d)) solid transparent;
+  border-right: calc(4 * var(--d)) solid transparent;
+  border-bottom: calc(6 * var(--d)) solid #effff5;
+}
+
+.rulerLabels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: calc(8 * var(--d));
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: calc(9 * var(--d));
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(238, 255, 244, 0.7);
+}
+
+/* ---- Steps ---- */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(20px, 3vw, 40px);
+  max-width: 1120px;
+  margin: 44px auto 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps span {
+  display: block;
+  margin-bottom: 10px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--lit);
+}
+
+.steps strong {
+  display: block;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.steps p {
+  margin: 6px 0 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--paper-dim);
+}
+
+@media (max-width: 760px) {
+  .steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node,
+  .cable,
+  .cableGlow,
+  .cablePending,
+  .port,
+  .result {
+    transition: none;
+  }
+
+  .live .cometHead,
+  .live .cometTail {
+    animation: none;
+  }
+}
