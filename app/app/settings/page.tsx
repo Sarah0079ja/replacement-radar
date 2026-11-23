@@ -78,9 +78,9 @@ export default function SettingsPage() {
         const coverage = await coverageResponse.json() as { zips?: string[] };
         zips = coverage.zips || [];
       } else {
-        // Compatibility fallback while the additive coverage migration is being applied.
-        const { data: opportunities } = await supabase.from("opportunities").select("property_zip");
-        zips = Array.from(new Set<string>((opportunities || []).map((row: { property_zip: string | null }) => row.property_zip).filter((zip: string | null): zip is string => Boolean(zip)))).sort();
+        // The coverage endpoint is the only supported source for which ZIPs are
+        // active. Do not fall back to a broad, unscoped opportunities read.
+        setError("We could not load your service-area coverage. Please try again.");
       }
       const configured = (workspaceRow.service_zip_codes || []).filter((zip: string) => zips.includes(zip));
       setWorkspaceId(workspace);
