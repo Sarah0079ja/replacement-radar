@@ -223,6 +223,7 @@ function MobileProspectCard({ property, status, onOpen, variant = "default" }: {
   const occupancy = safeOccupancy(enriched);
   const streetActivity = enriched.same_street_hvac_since_2021 ?? 0;
   const statusClass = `status-${status.toLowerCase().replaceAll(" ", "-")}`;
+  const homeContext = propertyHomeContext(property);
 
   if (variant === "weekly") {
     return (
@@ -240,9 +241,9 @@ function MobileProspectCard({ property, status, onOpen, variant = "default" }: {
         <div className="weekly-compact-hvac">
           <span className="mobile-card-label">Last HVAC</span>
           <strong>{property.latest_permit_date ? `${formatPermitDate(property.latest_permit_date)} · ${formatElapsedYears(property.estimated_years_since_last_known_hvac_event).replace(" ago", "")}` : "No recorded event"}</strong>
-          <small>{property.latest_permit_date ? hvacEventLabel(property) : "Current system unknown"}</small>
+          {property.latest_permit_date && <small>{hvacEventLabel(property)}</small>}
         </div>
-        <div className="weekly-compact-context">Built {property.year_built || "Unknown"} · {enriched.living_area_sqft ? `${enriched.living_area_sqft.toLocaleString()} sq ft` : "Size unavailable"}</div>
+        {homeContext.length > 0 && <div className="weekly-compact-context">{homeContext.join(" · ")}</div>}
         <span className="mobile-card-action">View property <span aria-hidden="true">→</span></span>
       </button>
     );
@@ -266,23 +267,19 @@ function MobileProspectCard({ property, status, onOpen, variant = "default" }: {
             <small>{hvacEventLabel(property)}</small>
           </>
         ) : (
-          <>
-            <strong>No recorded event</strong>
-            <small>Since 2018 coverage start · Current system unknown</small>
-          </>
+          <strong>No recorded event</strong>
         )}
       </div>
       <div className="mobile-card-context">
-        <div className="mobile-card-section">
+        {homeContext.length > 0 && <div className="mobile-card-section">
           <span className="mobile-card-label">Home</span>
-          <strong>{enriched.living_area_sqft ? `${enriched.living_area_sqft.toLocaleString()} sq ft` : "Size unavailable"}</strong>
-          <small>Built {property.year_built || "Unknown"}</small>
-        </div>
-        <div className="mobile-card-section">
+          <strong>{homeContext.join(" · ")}</strong>
+        </div>}
+        {(!SHOW_OWNER_DETAILS || enriched.owner_name || occupancy) && <div className="mobile-card-section">
           <span className="mobile-card-label">Owner</span>
-          <strong>{SHOW_OWNER_DETAILS ? safeOwnerValue(enriched.owner_name, "Owner unavailable") : "Owner details hidden"}</strong>
-          <small>{occupancy === "LIKELY_OWNER_OCCUPIED" ? "Likely owner occupied" : occupancy === "LIKELY_ABSENTEE" ? "Likely absentee owner" : "Occupancy unknown"}{occupancy && <em> · Inferred</em>}</small>
-        </div>
+          {SHOW_OWNER_DETAILS ? enriched.owner_name && <strong>{safeOwnerValue(enriched.owner_name, "")}</strong> : <strong>Owner details hidden</strong>}
+          {occupancy && <small>{occupancy === "LIKELY_OWNER_OCCUPIED" ? "Likely owner occupied" : "Likely absentee owner"}<em> · Inferred</em></small>}
+        </div>}
       </div>
       <div className="mobile-card-local">
         <span className="mobile-card-label">Local activity</span>
@@ -291,6 +288,14 @@ function MobileProspectCard({ property, status, onOpen, variant = "default" }: {
       <span className="mobile-card-action">View property <span aria-hidden="true">→</span></span>
     </button>
   );
+}
+
+function propertyHomeContext(property: Property) {
+  const enriched = property as EnrichedProperty;
+  return [
+    property.year_built ? `Built ${property.year_built}` : null,
+    enriched.living_area_sqft ? `${enriched.living_area_sqft.toLocaleString()} sq ft` : null,
+  ].filter((value): value is string => Boolean(value));
 }
 
 function WeeklySkeleton() {
@@ -412,8 +417,8 @@ function ThisWeekView({
                   return <tr key={member.id} className={`weekly-row status-${status.toLowerCase().replaceAll(" ", "-")}`} onClick={() => onOpen(property)}>
                     <td><div className="address">{property.address}</div><div className="subline">{propertyCity(property)}, TX {property.property_zip}</div></td>
                     <td><span className={`priority-label priority-${priorityTone(property.opportunity_strength)}`}>{priorityLabel(property.opportunity_strength)}</span></td>
-                    <td className="hvac-record-cell">{property.latest_permit_date ? <><strong>{formatPermitDate(property.latest_permit_date)}</strong><span>{formatElapsedYears(property.estimated_years_since_last_known_hvac_event)}</span><small>{hvacEventLabel(property)}</small></> : <><strong>No recorded event</strong><span>Since 2018 coverage start</span><small>Current system unknown</small></>}</td>
-                    <td className="home-context-cell"><strong>{(property as EnrichedProperty).living_area_sqft ? `${(property as EnrichedProperty).living_area_sqft?.toLocaleString()} sq ft` : "Size unavailable"}</strong><span>Built {property.year_built || "Unknown"}</span></td>
+                    <td className="hvac-record-cell">{property.latest_permit_date ? <><strong>{formatPermitDate(property.latest_permit_date)}</strong><span>{formatElapsedYears(property.estimated_years_since_last_known_hvac_event)}</span><small>{hvacEventLabel(property)}</small></> : <strong>No recorded event</strong>}</td>
+                    <td className="home-context-cell">{propertyHomeContext(property).map((value) => <span key={value}>{value}</span>)}</td>
                     <td><select aria-label={`Status for ${property.address}`} value={status} onClick={(event) => event.stopPropagation()} onChange={(event) => onStatus(property, event.target.value as Status)}>{statuses.map((value) => <option key={value}>{value}</option>)}</select></td>
                     <td><button className="row-arrow" aria-label={`Open ${property.address}`} onClick={(event) => { event.stopPropagation(); onOpen(property); }}>→</button></td>
                   </tr>;
@@ -488,28 +493,35 @@ function HomeContent() {
   useEffect(() => {
     if (!supabase) return;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const identity = user?.user_metadata?.user_name || user?.email || "Contractor";
-      setUserInitials(initials(identity));
-      const { data: opps, error } = await supabase.from("opportunities").select("*").order("score", { ascending: false });
-      setLoadingOpportunities(false);
-      if (error) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const identity = user?.user_metadata?.user_name || user?.email || "Contractor";
+        setUserInitials(initials(identity));
+        const response = await fetch("/api/opportunities", { cache: "no-store" });
+        const payload = await response.json() as Property[] | { error?: string };
+        if (!response.ok || !Array.isArray(payload)) {
+          setOpportunityError(response.status === 402 ? "Your trial or subscription is required to view opportunities." : "We could not load your opportunity data. Check your Supabase connection and try again.");
+          return;
+        }
+        const opps = payload as Array<Property & { id: string }>;
+        setOpportunityRows((opps || []) as Property[]);
+        const { data: memberships } = await supabase.from("memberships").select("workspace_id").order("created_at", { ascending: true }).order("workspace_id", { ascending: true }).limit(1);
+        const workspace = memberships?.[0]?.workspace_id;
+        if (!workspace) return;
+        setWorkspaceId(workspace);
+        const { data: workspaceRow } = await supabase.from("workspaces").select("name").eq("id", workspace).single();
+        if (workspaceRow?.name) setWorkspaceName(workspaceRow.name);
+        const idsByParcel = Object.fromEntries((opps || []).map((row: { parcel_id: string; id: string }) => [row.parcel_id, row.id]));
+        setOpportunityIds(idsByParcel);
+        const { data: activity } = await supabase.from("lead_activity").select("opportunity_id,status").eq("workspace_id", workspace);
+        const parcelById = Object.fromEntries(Object.entries(idsByParcel).map(([parcel, id]) => [id, parcel]));
+        const activityByParcel = Object.fromEntries((activity || []).map((row: { opportunity_id: string; status: Status }) => [parcelById[row.opportunity_id], row.status]));
+        if (Object.keys(activityByParcel).length) setLeadStatuses((current) => ({ ...current, ...activityByParcel }));
+      } catch {
         setOpportunityError("We could not load your opportunity data. Check your Supabase connection and try again.");
-        return;
+      } finally {
+        setLoadingOpportunities(false);
       }
-      setOpportunityRows((opps || []) as Property[]);
-      const { data: memberships } = await supabase.from("memberships").select("workspace_id").order("created_at", { ascending: true }).order("workspace_id", { ascending: true }).limit(1);
-      const workspace = memberships?.[0]?.workspace_id;
-      if (!workspace) return;
-      setWorkspaceId(workspace);
-      const { data: workspaceRow } = await supabase.from("workspaces").select("name").eq("id", workspace).single();
-      if (workspaceRow?.name) setWorkspaceName(workspaceRow.name);
-      const idsByParcel = Object.fromEntries((opps || []).map((row: { parcel_id: string; id: string }) => [row.parcel_id, row.id]));
-      setOpportunityIds(idsByParcel);
-      const { data: activity } = await supabase.from("lead_activity").select("opportunity_id,status").eq("workspace_id", workspace);
-      const parcelById = Object.fromEntries(Object.entries(idsByParcel).map(([parcel, id]) => [id, parcel]));
-      const activityByParcel = Object.fromEntries((activity || []).map((row: { opportunity_id: string; status: Status }) => [parcelById[row.opportunity_id], row.status]));
-      if (Object.keys(activityByParcel).length) setLeadStatuses((current) => ({ ...current, ...activityByParcel }));
     })();
   }, [supabase]);
 
@@ -914,16 +926,15 @@ function HomeContent() {
                             <span className={`priority-label priority-${priorityTone(property.opportunity_strength)}`}>{priorityLabel(property.opportunity_strength)}</span>
                           </td>
                           <td className="hvac-record-cell">
-                            {property.latest_permit_date ? <><strong>{formatPermitDate(property.latest_permit_date)}</strong><span>{formatElapsedYears(property.estimated_years_since_last_known_hvac_event)}</span><small>{hvacEventLabel(property)}</small></> : <><strong>No recorded event</strong><span>Since 2018 coverage start</span><small>Current system unknown</small></>}
+                            {property.latest_permit_date ? <><strong>{formatPermitDate(property.latest_permit_date)}</strong><span>{formatElapsedYears(property.estimated_years_since_last_known_hvac_event)}</span><small>{hvacEventLabel(property)}</small></> : <strong>No recorded event</strong>}
                           </td>
                           <td className="home-context-cell">
-                            <strong>{(property as EnrichedProperty).living_area_sqft ? `${(property as EnrichedProperty).living_area_sqft?.toLocaleString()} sq ft` : "Size unavailable"}</strong>
-                            <span>Built {property.year_built || "Unknown"}</span>
-                            <small>{property.property_type.includes("SINGLE FAMILY") ? "Single-family" : property.property_type}</small>
+                            {propertyHomeContext(property).map((value) => <span key={value}>{value}</span>)}
+                            {property.property_type && <small>{property.property_type.includes("SINGLE FAMILY") ? "Single-family" : property.property_type}</small>}
                           </td>
                           <td className="owner-context-cell">
-                            <strong>{SHOW_OWNER_DETAILS ? safeOwnerValue((property as EnrichedProperty).owner_name, "Owner unavailable") : "Owner details hidden"}</strong>
-                            {safeOccupancy(property as EnrichedProperty) ? <span>{safeOccupancy(property as EnrichedProperty) === "LIKELY_OWNER_OCCUPIED" ? "Likely owner occupied" : "Likely absentee owner"} <em>Inferred</em></span> : <span>Occupancy unknown</span>}
+                            {SHOW_OWNER_DETAILS ? ((property as EnrichedProperty).owner_name && <strong>{safeOwnerValue((property as EnrichedProperty).owner_name, "")}</strong>) : <strong>Owner details hidden</strong>}
+                            {safeOccupancy(property as EnrichedProperty) && <span>{safeOccupancy(property as EnrichedProperty) === "LIKELY_OWNER_OCCUPIED" ? "Likely owner occupied" : "Likely absentee owner"} <em>Inferred</em></span>}
                           </td>
                           <td className="local-signal-cell">
                             {(property as EnrichedProperty).same_street_hvac_since_2021 ? <><strong>{(property as EnrichedProperty).same_street_hvac_since_2021} HVAC records</strong><span>On this street since 2021</span></> : <><strong>No local signal</strong><span>Recorded in current data</span></>}
@@ -1111,36 +1122,27 @@ function PropertyOverview({ property }: { property: Property }) {
 
   const livingArea = (p.living_area_sqft ?? null) as number | null;
   const occupancy = safeOccupancy(p);
-  const occupancyLabel =
-    occupancy === "LIKELY_OWNER_OCCUPIED" ? "Likely owner occupied"
-    : occupancy === "LIKELY_ABSENTEE" ? "Likely absentee owner"
-    : "Not available";
+  const propertyType = property.property_type
+    ? property.property_type.includes("SINGLE FAMILY") ? "Single-family residential" : property.property_type
+    : null;
+  const ownerName = SHOW_OWNER_DETAILS && p.owner_name ? safeOwnerValue(p.owner_name, "") : null;
+  const mailingAddress = SHOW_OWNER_DETAILS && p.owner_mailing_address ? safeOwnerValue(p.owner_mailing_address, "") : null;
+  const occupancyLabel = occupancy === "LIKELY_OWNER_OCCUPIED" ? "Likely owner occupied" : "Likely absentee owner";
+  const items: Array<{ label: string; value: React.ReactNode }> = [];
+  if (propertyType) items.push({ label: "Property type", value: propertyType });
+  if (livingArea) items.push({ label: "Living area", value: `${livingArea.toLocaleString()} sq ft` });
+  if (ownerName) items.push({ label: "Current owner", value: ownerName });
+  if (mailingAddress) items.push({ label: "Mailing address", value: mailingAddress });
+  if (occupancy) items.push({
+    label: "Owner occupancy",
+    value: <><span>{occupancyLabel}</span><span className="inferred-label">Inferred</span></>,
+  });
+
+  if (items.length === 0) return null;
+
   return (
     <dl className="overview-grid">
-      <OverviewItem
-        label="Property type"
-        value={property.property_type.includes("SINGLE FAMILY") ? "Single-family residential" : property.property_type}
-      />
-      <OverviewItem
-        label="Living area"
-        value={livingArea ? `${livingArea.toLocaleString()} sq ft` : "Not available"}
-      />
-      <OverviewItem
-        label="Current owner"
-        value={SHOW_OWNER_DETAILS ? safeOwnerValue(p.owner_name, "Not available") : "Owner details hidden"}
-      />
-      <OverviewItem
-        label="Mailing address"
-        value={SHOW_OWNER_DETAILS ? safeOwnerValue(p.owner_mailing_address, "Not available") : "Owner details hidden"}
-      />
-      <OverviewItem
-        label="Owner occupancy"
-        value={
-          occupancy
-            ? <><span>{occupancyLabel}</span><span className="inferred-label">Inferred</span></>
-            : occupancyLabel
-        }
-      />
+      {items.map((item) => <OverviewItem key={item.label} label={item.label} value={item.value} />)}
     </dl>
   );
 }
@@ -1166,6 +1168,12 @@ function PropertyDetail({
   const p = property as EnrichedProperty;
   const occupancy = safeOccupancy(p);
   const hasNearby = (p.same_street_hvac_since_2021 ?? 0) > 0 || (p.peers_with_newer_hvac_event ?? 0) > 0;
+  const hasHomeOwnershipDetails = Boolean(
+    property.property_type ||
+    p.living_area_sqft ||
+    (SHOW_OWNER_DETAILS && (p.owner_name || p.owner_mailing_address)) ||
+    occupancy,
+  );
   const [sourceEvidenceOpen, setSourceEvidenceOpen] = useState(false);
 
   return (
@@ -1214,10 +1222,12 @@ function PropertyDetail({
           <p className="hvac-caveat">This is the last recorded public event, not verified current equipment age.</p>
         </div>
 
-        <div className="detail-section">
-          <h3>Home and ownership</h3>
-          <PropertyOverview property={property} />
-        </div>
+        {hasHomeOwnershipDetails && (
+          <div className="detail-section">
+            <h3>Home and ownership</h3>
+            <PropertyOverview property={property} />
+          </div>
+        )}
 
         {/* Lead status */}
         <div className="detail-section">
@@ -1252,38 +1262,38 @@ function PropertyDetail({
           </button>
           <div id="source-evidence-content" className={`source-evidence-content ${sourceEvidenceOpen ? "source-evidence-open" : ""}`}>
             <div className="evidence-stack">
-            <div className="source-row">
+            {property.year_built && <div className="source-row">
               <EvidenceTag tone="verified">VERIFIED DATA</EvidenceTag>
               <div>
                 <strong>Property year built</strong>
-                <span>{property.year_built || "Unknown"}</span>
+                <span>{property.year_built}</span>
                 <small>DCAD parcel record</small>
               </div>
-            </div>
-            {SHOW_OWNER_DETAILS && <div className="source-row">
+            </div>}
+            {SHOW_OWNER_DETAILS && p.owner_name && <div className="source-row">
               <EvidenceTag tone={p.owner_name && !isWithheld(p.owner_name) ? "verified" : "unknown"}>{p.owner_name && !isWithheld(p.owner_name) ? "VERIFIED DATA" : "UNKNOWN"}</EvidenceTag>
               <div>
                 <strong>Current owner record</strong>
-                <span>{safeOwnerValue(p.owner_name, "Not available")}</span>
+                <span>{safeOwnerValue(p.owner_name, "")}</span>
                 <small>DCAD owner record</small>
               </div>
             </div>}
-            {SHOW_OWNER_DETAILS && <div className="source-row">
+            {SHOW_OWNER_DETAILS && p.owner_mailing_address && <div className="source-row">
               <EvidenceTag tone={p.owner_mailing_address && !isWithheld(p.owner_mailing_address) ? "verified" : "unknown"}>{p.owner_mailing_address && !isWithheld(p.owner_mailing_address) ? "VERIFIED DATA" : "UNKNOWN"}</EvidenceTag>
               <div>
                 <strong>Owner mailing address</strong>
-                <span>{safeOwnerValue(p.owner_mailing_address, "Not available")}</span>
+                <span>{safeOwnerValue(p.owner_mailing_address, "")}</span>
                 <small>DCAD postal record</small>
               </div>
             </div>}
-            <div className="source-row">
-              <EvidenceTag tone={occupancy ? "inference" : "unknown"}>{occupancy ? "INFERENCE" : "UNKNOWN"}</EvidenceTag>
+            {occupancy && <div className="source-row">
+              <EvidenceTag tone="inference">INFERENCE</EvidenceTag>
               <div>
                 <strong>Owner occupancy</strong>
-                <span>{occupancy === "LIKELY_OWNER_OCCUPIED" ? "Likely owner occupied" : occupancy === "LIKELY_ABSENTEE" ? "Likely absentee owner" : "Not available"}</span>
+                <span>{occupancy === "LIKELY_OWNER_OCCUPIED" ? "Likely owner occupied" : "Likely absentee owner"}</span>
                 <small>Derived from mailing/site address comparison</small>
               </div>
-            </div>
+            </div>}
             <div className="source-row">
               <EvidenceTag tone={property.latest_permit_description ? "verified" : "unknown"}>
                 {property.latest_permit_description ? "VERIFIED DATA" : "UNKNOWN"}
@@ -1294,20 +1304,16 @@ function PropertyDetail({
                 <small>{property.latest_permit_date ? `Issued ${property.latest_permit_date.slice(0, 10)}` : "Verified source record"}</small>
               </div>
             </div>
-            <div className="source-row">
-              <EvidenceTag tone={property.last_known_hvac_event_year ? "inference" : "unknown"}>
-                {property.last_known_hvac_event_year ? "INFERENCE" : "UNKNOWN"}
-              </EvidenceTag>
+            {property.last_known_hvac_event_year && property.estimated_years_since_last_known_hvac_event !== null && property.estimated_years_since_last_known_hvac_event !== undefined && <div className="source-row">
+              <EvidenceTag tone="inference">INFERENCE</EvidenceTag>
               <div>
                 <strong>Years since known HVAC event</strong>
                 <span>
-                  {property.estimated_years_since_last_known_hvac_event
-                    ? `${property.estimated_years_since_last_known_hvac_event} years since ${property.last_known_hvac_event_year}`
-                    : "Cannot be estimated"}
+                  {property.estimated_years_since_last_known_hvac_event} years since {property.last_known_hvac_event_year}
                 </span>
                 <small>Not verified current equipment age</small>
               </div>
-            </div>
+            </div>}
             <div className="source-row">
               <EvidenceTag tone="unknown">UNKNOWN</EvidenceTag>
               <div>
@@ -1315,14 +1321,14 @@ function PropertyDetail({
                 <span>Cannot be verified from public records</span>
               </div>
             </div>
-            <div className="source-row">
+            {property.evidence_confidence && <div className="source-row">
               <EvidenceTag tone={property.evidence_confidence === "HIGH" ? "verified" : property.evidence_confidence === "MEDIUM" ? "inference" : "unknown"}>{property.evidence_confidence === "HIGH" ? "VERIFIED DATA" : property.evidence_confidence === "MEDIUM" ? "INFERENCE" : "UNKNOWN"}</EvidenceTag>
               <div>
                 <strong>Evidence quality</strong>
-                <span>{property.evidence_confidence || "Not available"}</span>
+                <span>{property.evidence_confidence}</span>
                 <small>Source and address-match assessment</small>
               </div>
-            </div>
+            </div>}
             </div>
           </div>
         </div>

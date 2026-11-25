@@ -382,6 +382,20 @@
   .weekly-progress-strip > div:nth-child(3) { border-right:0; }
 }
 
+@media (max-width:1100px) {
+  .weekly-table-wrap { overflow:visible; border-top:0; }
+  .weekly-table { display:none; }
+  .table-wrap { overflow:visible; border-top:0; }
+  .table-wrap table { display:none; }
+  .mobile-prospect-list { display:grid; gap:10px; }
+  .weekly-mobile-range { display:block; padding:12px 0 2px; color:#6c7273; font-size:11px; }
+  .weekly-mobile-list { display:grid; gap:10px; padding-top:10px; }
+  .weekly-mobile-pagination { display:flex; align-items:center; justify-content:space-between; gap:10px; padding-top:12px; }
+  .weekly-mobile-pagination button { min-height:44px; padding:0 8px; border:0; background:transparent; color:var(--accent); font-size:12px; font-weight:600; }
+  .weekly-mobile-pagination button:disabled { color:#a5abad; cursor:default; }
+  .weekly-mobile-pagination span { color:#6c7273; font-size:11px; white-space:nowrap; }
+}
+
 @media (max-width:700px) {
   .weekly-title-row { padding-bottom:20px; }
   .weekly-progress-strip { grid-template-columns:repeat(2,1fr); gap:16px 0; }

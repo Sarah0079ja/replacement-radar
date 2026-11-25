@@ -3,7 +3,6 @@ import styles from "./footer.module.css";
 
 // The marketing site's footer: the quiet end after the final CTA. Destinations mirror the floating nav
 // (_landing/header/tabs.ts); in-page targets are written as "/" and "/#how-it-works" so they work from every page.
-// No Privacy/Terms links until those pages exist.
 //
 // Hero footage (public/hero/neighborhood-*.mp4, -poster.jpg) is from Pexels; the Pexels licence does not require
 // attribution, so the credit is recorded here rather than on the page.
@@ -16,6 +15,8 @@ const GROUPS = [
       { label: "How it works", href: "/#how-it-works" },
       { label: "Pricing", href: "/pricing" },
       { label: "How we know", href: "/how-we-know" },
+        { label: "Privacy Policy", href: "/privacy" },
+        { label: "Terms of Service", href: "/terms" },
     ],
   },
   {

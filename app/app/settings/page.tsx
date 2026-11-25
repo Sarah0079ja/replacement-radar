@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
-import styles from "../login/login.module.css";
+import loginStyles from "../login/login.module.css";
+import styles from "./settings.module.css";
 
 const WEEKLY_TARGETS = [50, 100, 250] as const;
+type SettingsSection = "service-area" | "weekly-capacity" | "business-mailing";
 
 type ExpansionResult = {
   reason?: string;
@@ -25,11 +27,9 @@ type SenderSettings = {
 };
 
 function buildSavedMessage(result: ExpansionResult) {
-  if (result.reason === "NO_CURRENT_COHORT") return "Settings saved. New target applies when you open This Week.";
+  if (result.reason === "NO_CURRENT_COHORT") return "Settings saved. Your new target applies when you open This Week.";
   if (result.reason === "NO_SERVICE_AREA") return "Settings saved. Add ZIP codes to your service area to generate prospects.";
-  if ((result.newly_added || 0) > 0 && result.cohort?.pool_exhausted) {
-    return `Settings saved. ${result.newly_added} new prospects added — that's all available in your area right now.`;
-  }
+  if ((result.newly_added || 0) > 0 && result.cohort?.pool_exhausted) return `Settings saved. ${result.newly_added} new prospects added — that's all available in your area right now.`;
   if ((result.newly_added || 0) > 0) return `Settings saved. ${result.newly_added} new prospects added to this week.`;
   return "Settings saved.";
 }
@@ -38,9 +38,10 @@ export default function SettingsPage() {
   const router = useRouter();
   const supabase = getSupabaseBrowserClient();
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
-  const [workspaceName, setWorkspaceName] = useState("Contractor workspace");
   const [supportedZips, setSupportedZips] = useState<string[]>([]);
   const [selectedZips, setSelectedZips] = useState<string[]>([]);
+  const [editingTerritory, setEditingTerritory] = useState(false);
+  const [activeSection, setActiveSection] = useState<SettingsSection>("service-area");
   const [weeklyTarget, setWeeklyTarget] = useState<number>(50);
   const [loading, setLoading] = useState(Boolean(supabase));
   const [saving, setSaving] = useState(false);
@@ -78,16 +79,14 @@ export default function SettingsPage() {
         const coverage = await coverageResponse.json() as { zips?: string[] };
         zips = coverage.zips || [];
       } else {
-        // The coverage endpoint is the only supported source for which ZIPs are
-        // active. Do not fall back to a broad, unscoped opportunities read.
         setError("We could not load your service-area coverage. Please try again.");
       }
       const configured = (workspaceRow.service_zip_codes || []).filter((zip: string) => zips.includes(zip));
       setWorkspaceId(workspace);
-      setWorkspaceName(workspaceRow.name || "Contractor workspace");
       setSupportedZips(zips);
       setSelectedZips(configured);
-      setWeeklyTarget([50, 100, 250].includes(workspaceRow.weekly_target_size) ? workspaceRow.weekly_target_size : 50);
+      setEditingTerritory(configured.length === 0);
+      setWeeklyTarget(WEEKLY_TARGETS.includes(workspaceRow.weekly_target_size) ? workspaceRow.weekly_target_size : 50);
       setSender({
         name: workspaceRow.mail_from_name || "",
         address1: workspaceRow.mail_from_address1 || "",
@@ -102,49 +101,36 @@ export default function SettingsPage() {
     })();
   }, [supabase]);
 
-  const selectionLabel = useMemo(() => {
-    if (!selectedZips.length) return "No ZIP codes selected yet";
-    return `${selectedZips.length} ZIP code${selectedZips.length === 1 ? "" : "s"} selected`;
-  }, [selectedZips]);
-
+  const selectionLabel = useMemo(() => selectedZips.length ? `${selectedZips.length} ZIP code${selectedZips.length === 1 ? "" : "s"} selected` : "No ZIP codes selected yet", [selectedZips]);
   const toggleZip = (zip: string) => {
     setSavedMessage("");
     setSelectedZips((current) => current.includes(zip) ? current.filter((value) => value !== zip) : [...current, zip].sort());
   };
 
-  const saveSettings = async () => {
+  async function saveSettings() {
     if (!supabase || !workspaceId) return;
     setSaving(true);
     setSavedMessage("");
     setError("");
-    const { error: updateError } = await supabase
-      .from("workspaces")
-      .update({
-        service_zip_codes: selectedZips,
-        weekly_target_size: weeklyTarget,
-        mail_from_name: sender.name.trim(),
-        mail_from_address1: sender.address1.trim(),
-        mail_from_address2: sender.address2.trim() || null,
-        mail_from_city: sender.city.trim(),
-        mail_from_state: sender.state.trim().toUpperCase(),
-        mail_from_zip: sender.zip.trim(),
-        mail_from_phone: sender.phone.trim(),
-        mail_from_website: sender.website.trim() || null,
-      })
-      .eq("id", workspaceId);
-    setSaving(false);
+    const { error: updateError } = await supabase.from("workspaces").update({
+      service_zip_codes: selectedZips,
+      weekly_target_size: weeklyTarget,
+      mail_from_name: sender.name.trim(),
+      mail_from_address1: sender.address1.trim(),
+      mail_from_address2: sender.address2.trim() || null,
+      mail_from_city: sender.city.trim(),
+      mail_from_state: sender.state.trim().toUpperCase(),
+      mail_from_zip: sender.zip.trim(),
+      mail_from_phone: sender.phone.trim(),
+      mail_from_website: sender.website.trim() || null,
+    }).eq("id", workspaceId);
     if (updateError) {
-      setError("Settings could not be saved. Please try again.");
       setSaving(false);
+      setError("Settings could not be saved. Please try again.");
       return;
     }
     try {
-      const expansionResponse = await fetch("/api/this-week/expand", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ new_target: weeklyTarget }),
-        cache: "no-store",
-      });
+      const expansionResponse = await fetch("/api/this-week/expand", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ new_target: weeklyTarget }), cache: "no-store" });
       const expansionResult = await expansionResponse.json() as ExpansionResult & { error?: string };
       if (!expansionResponse.ok) {
         setError("Settings saved, but your weekly prospect list could not be updated. Please try again.");
@@ -156,74 +142,36 @@ export default function SettingsPage() {
     } finally {
       setSaving(false);
     }
-  };
-
-  if (!supabase) {
-    return <main className={styles.page}><section className={styles.card}><p className={styles.kicker}>RESPONSEHVAC</p><h1>Settings need Supabase</h1><p className={styles.intro}>Configure Supabase to save service-area settings for a contractor workspace.</p><button className={styles.button} onClick={() => router.push("/dashboard")}>Back to This Week</button></section></main>;
   }
 
-  return (
-    <main className="settings-page">
-      <div className="settings-shell">
-        <div className="settings-topline">
-          <button className="settings-back" onClick={() => router.push("/dashboard")}>← ResponseHVAC</button>
-          <span>Texas contractor workspace</span>
+  if (!supabase) return <main className={loginStyles.page}><section className={loginStyles.card}><p className={loginStyles.kicker}>RESPONSEHVAC</p><h1>Settings need Supabase</h1><p className={loginStyles.intro}>Configure Supabase to save service-area settings for a contractor workspace.</p><button className={loginStyles.button} onClick={() => router.push("/dashboard")}>Back to This Week</button></section></main>;
+
+  const sectionItems: { id: SettingsSection; label: string }[] = [
+    { id: "service-area", label: "Service area" },
+    { id: "weekly-capacity", label: "Weekly capacity" },
+    { id: "business-mailing", label: "Business & mailing" },
+  ];
+
+  return <main className={styles.page}>
+    <div className={styles.shell}>
+      <header className={styles.topline}><button className={styles.backLink} type="button" onClick={() => router.push("/dashboard")}>← ResponseHVAC</button><span>Workspace settings</span></header>
+      <section className={styles.header} aria-labelledby="settings-title"><h1 id="settings-title">Settings</h1><p className={styles.intro}>Manage your service area, weekly capacity, and business details.</p></section>
+      <div className={styles.settingsLayout}>
+        <nav className={styles.nav} aria-label="Settings sections">
+          <p className={styles.navLabel}>Workspace</p>
+          {sectionItems.map((item) => <button className={`${styles.navItem} ${activeSection === item.id ? styles.navItemActive : ""}`} type="button" key={item.id} onClick={() => setActiveSection(item.id)} aria-current={activeSection === item.id ? "page" : undefined}>{item.label}<span aria-hidden="true">→</span></button>)}
+        </nav>
+        <div className={styles.content}>
+          <p className={styles.contentContext}>{sectionItems.find((item) => item.id === activeSection)?.label}</p>
+          {loading ? <div className={styles.state} role="status">Loading workspace settings…</div> : <>
+            {activeSection === "service-area" && <section className={styles.section} aria-labelledby="service-area-heading"><div className={styles.sectionHead}><div><h2 id="service-area-heading">Service area</h2><p>Choose the ZIP codes ResponseHVAC uses for your weekly list.</p></div><span className={styles.count} aria-live="polite">{selectionLabel}</span></div>{selectedZips.length > 0 && !editingTerritory ? <div className={styles.selectedZips} aria-label="Selected service ZIP codes">{selectedZips.map((zip) => <span className={styles.zipChip} key={zip}>{zip}</span>)}</div> : <div className={styles.zipGrid}>{supportedZips.map((zip) => <label className={`${styles.zipOption} ${selectedZips.includes(zip) ? styles.selected : ""}`} key={zip}><input type="checkbox" checked={selectedZips.includes(zip)} onChange={() => toggleZip(zip)} /><span>{zip}</span></label>)}</div>}<button className={styles.textButton} type="button" onClick={() => setEditingTerritory((current) => !current)}>{editingTerritory ? "Done editing" : "Edit service area"}</button><p className={styles.note}>Added ZIP codes take effect when you save. Removed ZIP codes won&apos;t affect this week&apos;s assignments.</p></section>}
+            {activeSection === "weekly-capacity" && <section className={`${styles.section} ${styles.capacitySection}`} aria-labelledby="weekly-target-heading"><div className={styles.sectionHead}><div><h2 id="weekly-target-heading">Weekly capacity</h2><p>Set the maximum number of qualifying homes your team can work each week.</p></div></div><div className={styles.targetOptions} role="radiogroup" aria-labelledby="weekly-target-heading">{WEEKLY_TARGETS.map((target) => <label className={`${styles.targetOption} ${weeklyTarget === target ? styles.selected : ""}`} key={target}><input type="radio" name="weekly-target" value={target} checked={weeklyTarget === target} onChange={() => { setWeeklyTarget(target); setSavedMessage(""); }} /><i aria-hidden="true" /><strong>{target === 250 ? "250+" : target}</strong><span>{target === 250 ? "250 or more homes" : "homes / week"}</span><small>{target === 50 ? "Focused" : target === 100 ? "Growing" : "High-volume"}</small></label>)}</div><p className={styles.note}>This is a working maximum, not a guaranteed number of opportunities.</p></section>}
+            {activeSection === "business-mailing" && <section className={styles.section} aria-labelledby="sender-heading"><div className={styles.sectionHead}><div><h2 id="sender-heading">Business and mailing information</h2><p>These details are used as the return address when you send direct mail from ResponseHVAC.</p></div></div><div className={styles.form}><label><span>Business / sender name <b>*</b></span><input value={sender.name} onChange={(event) => setSender({ ...sender, name: event.target.value })} /></label><label><span>Address line 1 <b>*</b></span><input value={sender.address1} onChange={(event) => setSender({ ...sender, address1: event.target.value })} /></label><label><span>Address line 2</span><input value={sender.address2} onChange={(event) => setSender({ ...sender, address2: event.target.value })} /></label><div className={styles.formRow}><label><span>City <b>*</b></span><input value={sender.city} onChange={(event) => setSender({ ...sender, city: event.target.value })} /></label><label><span>State <b>*</b></span><input value={sender.state} maxLength={2} onChange={(event) => setSender({ ...sender, state: event.target.value.toUpperCase() })} /></label><label><span>ZIP <b>*</b></span><input value={sender.zip} onChange={(event) => setSender({ ...sender, zip: event.target.value })} /></label></div><label><span>Phone <b>*</b></span><input type="tel" value={sender.phone} onChange={(event) => setSender({ ...sender, phone: event.target.value })} /></label><label><span>Website</span><input type="url" value={sender.website} onChange={(event) => setSender({ ...sender, website: event.target.value })} placeholder="https://" /></label></div></section>}
+            {error && <p className={styles.error} role="alert">{error}</p>}{savedMessage && <p className={styles.success} role="status">{savedMessage}</p>}
+            <div className={styles.actions}><button className={styles.primary} type="button" onClick={saveSettings} disabled={saving}>{saving ? "Saving…" : "Save settings"}</button><button className={styles.secondary} type="button" onClick={() => router.push("/dashboard")}>Back to This Week</button></div>
+          </>}
         </div>
-        <section className="settings-header">
-          <p className="eyebrow"><span className="eyebrow-dot" /> WORKSPACE SETTINGS</p>
-          <h1>Set up your prospecting territory</h1>
-          <p className="settings-intro">Tell us where {workspaceName} works and how many new homes your team wants to focus on each week.</p>
-        </section>
-
-        {loading ? <div className="settings-state">Loading workspace settings…</div> : (
-          <>
-            <section className="settings-section" aria-labelledby="service-area-heading">
-              <div className="settings-section-heading">
-                <div><h2 id="service-area-heading">Where do you work?</h2><p>Select the ZIP codes your company serves.</p></div>
-                <span className="settings-count">{selectionLabel}</span>
-              </div>
-              <div className="zip-grid">
-                {supportedZips.map((zip) => (
-                  <label className={`zip-option ${selectedZips.includes(zip) ? "zip-option-selected" : ""}`} key={zip}>
-                    <input type="checkbox" checked={selectedZips.includes(zip)} onChange={() => toggleZip(zip)} />
-                    <span>{zip}</span>
-                  </label>
-                ))}
-              </div>
-              <p className="settings-note">Added ZIP codes take effect when you save. If your current list is below your target, new prospects from the added area will be included immediately. Removed ZIP codes won&apos;t affect this week&apos;s assignments.</p>
-            </section>
-
-            <section className="settings-section" aria-labelledby="weekly-target-heading">
-              <div className="settings-section-heading"><div><h2 id="weekly-target-heading">Homes to work each week</h2><p>Choose how many new prospects you want in your weekly work list.</p></div></div>
-              <div className="target-options">
-                {WEEKLY_TARGETS.map((target) => (
-                  <label className={`target-option ${weeklyTarget === target ? "target-option-selected" : ""}`} key={target}>
-                    <input type="radio" name="weekly-target" value={target} checked={weeklyTarget === target} onChange={() => { setWeeklyTarget(target); setSavedMessage(""); }} />
-                    <span><strong>{target}</strong><small>homes / week</small></span>
-                  </label>
-                ))}
-              </div>
-              <p className="settings-note">Increasing your target adds more prospects to this week. Decreasing it applies next Monday.</p>
-            </section>
-
-            <section className="settings-section" aria-labelledby="sender-heading">
-              <div className="settings-section-heading"><div><h2 id="sender-heading">Return address for direct mail</h2><p>This address will appear as the return address on postcards you send. Use your business mailing address.</p></div></div>
-              <div className="sender-form">
-                <label><span>Business / sender name *</span><input value={sender.name} onChange={(event) => setSender({ ...sender, name: event.target.value })} /></label>
-                <label><span>Address line 1 *</span><input value={sender.address1} onChange={(event) => setSender({ ...sender, address1: event.target.value })} /></label>
-                <label><span>Address line 2</span><input value={sender.address2} onChange={(event) => setSender({ ...sender, address2: event.target.value })} /></label>
-                <div className="sender-form-row"><label><span>City *</span><input value={sender.city} onChange={(event) => setSender({ ...sender, city: event.target.value })} /></label><label><span>State *</span><input value={sender.state} maxLength={2} onChange={(event) => setSender({ ...sender, state: event.target.value.toUpperCase() })} /></label><label><span>ZIP *</span><input value={sender.zip} onChange={(event) => setSender({ ...sender, zip: event.target.value })} /></label></div>
-                <label><span>Phone *</span><input type="tel" value={sender.phone} onChange={(event) => setSender({ ...sender, phone: event.target.value })} /></label>
-                <label><span>Website</span><input type="url" value={sender.website} onChange={(event) => setSender({ ...sender, website: event.target.value })} placeholder="https://" /></label>
-              </div>
-            </section>
-
-            {error && <p className="settings-error" role="alert">{error}</p>}
-            {savedMessage && <p className="settings-success" role="status">{savedMessage}</p>}
-            <div className="settings-actions"><button className="primary-button" onClick={saveSettings} disabled={saving}>{saving ? "Saving…" : "Save settings"}</button><button className="secondary-button" onClick={() => router.push("/dashboard")}>Back to This Week</button></div>
-          </>
-        )}
       </div>
-    </main>
-  );
+    </div>
+  </main>;
 }

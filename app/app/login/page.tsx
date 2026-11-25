@@ -1,50 +1,14 @@
 "use client";
 
-import { FormEvent, useState, type CSSProperties } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { AuthVideo } from "../auth/AuthVideo";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
-import styles from "./login.module.css";
+import styles from "../auth/auth.module.css";
 
-const TERRITORY_MARKERS = [
-  [12, 24], [20, 42], [28, 18], [34, 57], [42, 31], [48, 16], [55, 42], [63, 23], [72, 35], [82, 18],
-  [88, 47], [16, 70], [25, 84], [38, 75], [48, 64], [58, 82], [69, 68], [78, 86], [90, 72], [8, 52],
-  [31, 39], [45, 91], [61, 55], [74, 53], [84, 61], [53, 54],
-] as const;
-
-function TerritoryVisualization() {
-  return (
-    <div className={styles.sceneWrap} aria-hidden="true">
-      <div className={styles.sceneMeta}><span>THIS WEEK</span><span>Texas</span></div>
-      <div className={styles.territoryFrame}>
-        <div className={styles.territoryGrid} />
-        <div className={styles.markerField}>
-          {TERRITORY_MARKERS.map(([left, top], index) => (
-            <span
-              key={String(left) + "-" + String(top)}
-              className={index === 25 ? styles.focusMarker : styles.propertyMarker}
-              style={{ "--left": String(left) + "%", "--top": String(top) + "%", "--delay": String((index % 7) * 0.08) + "s" } as CSSProperties}
-            />
-          ))}
-        </div>
-        <div className={styles.focusLine} />
-        <div className={styles.focusAddress}><span>7310 LARKSPUR LN</span><strong>HIGH PRIORITY</strong></div>
-        <div className={styles.evidencePanel}>
-          <div className={styles.evidenceHead}><span>7310 LARKSPUR LN</span><b>HIGH PRIORITY</b></div>
-          <p>WHY THIS HOME STANDS OUT</p>
-          <div className={styles.evidenceRow}><span className={styles.verifiedDot} /><span>Recorded HVAC replacement</span><strong>Aug 3, 2012</strong></div>
-          <div className={styles.evidenceLegend}><span>VERIFIED DATA</span><span>INFERENCE</span><span>UNKNOWN</span></div>
-        </div>
-        <div className={styles.workList}>
-          <div className={styles.listLabel}>NEXT ACTION</div>
-          <div className={styles.workRow}><span className={styles.rowMark} /><span>7310 Larkspur Ln</span><b>HIGH PRIORITY</b><em>NEW</em></div>
-          <div className={styles.workRow + " " + styles.backRow}><span className={styles.rowMark} /><span>Property opportunity</span><b>MEDIUM</b><em>NEW</em></div>
-          <div className={styles.workRow + " " + styles.backRow}><span className={styles.rowMark} /><span>Property opportunity</span><b>STRONG</b><em>NEW</em></div>
-        </div>
-      </div>
-      <div className={styles.sceneCaption}><span className={styles.captionRule} /><span>From territory to next action</span></div>
-    </div>
-  );
+function GoogleMark() {
+  return <svg className={styles.googleMark} viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.205c0-.638-.057-1.252-.163-1.841H9v3.482h4.844a4.14 4.14 0 0 1-1.797 2.716v2.258h2.908c1.702-1.567 2.685-3.875 2.685-6.615Z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.955-2.18l-2.908-2.258c-.806.54-1.835.86-3.047.86-2.344 0-4.33-1.584-5.04-3.714H.955v2.332A9 9 0 0 0 9 18Z"/><path fill="#FBBC05" d="M3.96 10.708A5.41 5.41 0 0 1 3.678 9c0-.593.102-1.17.282-1.708V4.96H.955A9 9 0 0 0 0 9c0 1.454.348 2.827.955 4.04l3.005-2.332Z"/><path fill="#EA4335" d="M9 3.578c1.322 0 2.508.454 3.442 1.345l2.582-2.582C13.463.89 11.427 0 9 0A9 9 0 0 0 .955 4.96L3.96 7.292C4.67 5.162 6.656 3.578 9 3.578Z"/></svg>;
 }
 
 export default function LoginPage() {
@@ -52,39 +16,31 @@ export default function LoginPage() {
   const client = getSupabaseBrowserClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const value = new URLSearchParams(window.location.search).get("error");
+    if (value === "oauth_failed") return "Google sign-in could not be completed. Please try again.";
+    if (value === "oauth_setup") return "Your account was created, but workspace setup could not be completed. Please contact support.";
+    return "";
+  });
   const [busy, setBusy] = useState(false);
+  const [oauthBusy, setOauthBusy] = useState(false);
+
+  async function continueWithGoogle() {
+    if (!client) { setError("Google sign-in is not configured in this environment."); return; }
+    setError(""); setOauthBusy(true);
+    const { error: oauthError } = await client.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}/auth/callback` } });
+    if (oauthError) { setOauthBusy(false); setError("We could not start Google sign-in. Please try again or use email and password."); }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
+    event.preventDefault(); setError(""); setBusy(true);
     if (!client) { router.push("/dashboard"); return; }
-    setBusy(true);
     const { error: signInError } = await client.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (signInError) { setError(signInError.message); return; }
     router.push("/dashboard");
   }
 
-  return (
-    <main className={styles.page}>
-      <section className={styles.authPanel} aria-labelledby="login-title">
-        <Link className={styles.brand} href="/" aria-label="ResponseHVAC home"><span className={styles.brandMark}>R</span><span>ResponseHVAC</span></Link>
-        <div className={styles.formIntro}><p className={styles.kicker}>WELCOME BACK</p><h1 id="login-title">Pick up where you left off.</h1><p className={styles.intro}>Sign in to your ResponseHVAC account.</p></div>
-        {client ? (
-          <form onSubmit={submit} className={styles.form}>
-            <div className={styles.field}><label htmlFor="email">Email</label><input id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></div>
-            <div className={styles.field}><div className={styles.fieldHeading}><label htmlFor="password">Password</label><Link href="/forgot-password">Forgot password?</Link></div><input id="password" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></div>
-            {error && <p className={styles.error} role="alert">{error}</p>}
-            <button className={styles.submit} type="submit" disabled={busy}>{busy ? "Signing in…" : "Sign in"}<span aria-hidden="true">↗</span></button>
-            <p className={styles.switchLink}>Don&apos;t have an account? <Link href="/signup">Create contractor workspace</Link></p>
-          </form>
-        ) : (
-          <div className={styles.demo}><p>Supabase is not configured, so the founder demo is available locally.</p><button className={styles.submit} onClick={() => router.push("/dashboard")}>Open founder demo<span aria-hidden="true">↗</span></button><small>Configure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to enable password authentication.</small></div>
-        )}
-        <p className={styles.footnote}>Texas HVAC prospecting intelligence.</p>
-      </section>
-      <aside className={styles.visualPanel} aria-label="ResponseHVAC territory visualization"><TerritoryVisualization /></aside>
-    </main>
-  );
+  return <main className={styles.page}><section className={styles.layout} aria-labelledby="login-title"><aside className={styles.story}><Link className={styles.brand} href="/" aria-label="ResponseHVAC home"><span className={styles.mark}>R</span><span>ResponseHVAC</span></Link><div className={styles.storyBody}><h2>Know which homes to work first.</h2><p className={styles.storyIntro}>ResponseHVAC turns qualifying property signals into a focused weekly prospecting list.</p><AuthVideo /></div><div className={styles.storyFoot}>A clearer next action for your team.</div></aside><div className={styles.card}><div className={styles.cardInner}><p className={styles.kicker}>Welcome back</p><h1 id="login-title">Welcome back.</h1><p className={styles.intro}>Sign in to your ResponseHVAC workspace.</p>{client ? <><button className={styles.social} type="button" onClick={continueWithGoogle} disabled={oauthBusy}><GoogleMark />{oauthBusy ? "Connecting…" : "Continue with Google"}</button><div className={styles.divider}><span>or</span></div><form onSubmit={submit} className={styles.form}><label htmlFor="email">Email<input id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label><label htmlFor="password"><span className={styles.fieldHeading}><span>Password</span><Link href="/forgot-password">Forgot password?</Link></span><input id="password" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>{error && <p className={styles.error} role="alert">{error}</p>}<button className={styles.submit} type="submit" disabled={busy}>{busy ? "Signing in…" : "Log in"}<span aria-hidden="true">→</span></button></form></> : <div className={styles.demo}><p>Supabase is not configured, so the founder demo is available locally.</p><button className={styles.submit} type="button" onClick={() => router.push("/dashboard")}>Open founder demo<span aria-hidden="true">→</span></button><small>Configure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to enable password authentication.</small></div>}<p className={styles.switchLink}>Don&apos;t have an account? <Link href="/signup">Create account</Link></p><nav className={styles.legalLinks} aria-label="Legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav></div></div></section></main>;
 }

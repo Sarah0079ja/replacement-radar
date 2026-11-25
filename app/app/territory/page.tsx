@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import styles from "../login/login.module.css";
+import styles from "./territory.module.css";
 
 export default function TerritoryPage() {
   const router = useRouter();
@@ -28,8 +28,7 @@ export default function TerritoryPage() {
       setStatus("review");
       setMessage(result.message);
     }
-  }
-
+}
   async function requestReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -40,9 +39,9 @@ export default function TerritoryPage() {
     setMessage(result.message);
   }
 
-  return <main className={styles.page}><section className={styles.card} aria-labelledby="territory-title">
-    <div className={styles.mark}>R</div>
-    <p className={styles.kicker}>RESPONSEHVAC · TEXAS CONTRACTORS</p>
+  return <main className={styles.page}><section className={styles.layout} aria-labelledby="territory-title">
+    <aside className={styles.story}><div><div className={styles.brand}><span className={styles.mark}>R</span><span>ResponseHVAC</span></div><div className={styles.workflow} aria-hidden="true"><span>Service area</span><i /><span>Prioritize</span><i /><span>Work first</span></div></div><div><h2>Know which homes to work first.</h2><p>ResponseHVAC helps HVAC teams turn qualifying property signals into a focused weekly work list.</p></div><div className={styles.storyFoot}><strong>Built for Texas contractors.</strong><span>Start by checking where your team works.</span></div></aside><div className={styles.card}>
+    <p className={styles.kicker}>Get started</p>
     <h1 id="territory-title">Check your service area.</h1>
     <p className={styles.intro}>Enter the ZIP codes your team works. We’ll check whether ResponseHVAC can serve that territory.</p>
     <form onSubmit={check} className={styles.form}>
@@ -55,5 +54,5 @@ export default function TerritoryPage() {
     {status === "review" && <form onSubmit={requestReview} className={styles.form} style={{ marginTop: 18 }}><label>Email for territory review<input type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label><button type="submit">Request my territory <span aria-hidden="true">→</span></button></form>}
     {status === "sent" && <p className={styles.switchLink}><Link href="/">Return to ResponseHVAC</Link></p>}
     <p className={styles.switchLink}><Link href="/login">Already have an account? Sign in</Link></p>
-  </section></main>;
+    </div></section></main>;
 }
