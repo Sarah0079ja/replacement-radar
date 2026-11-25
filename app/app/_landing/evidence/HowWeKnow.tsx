@@ -101,7 +101,7 @@ function SketchPath({ sh }: { sh: Shape }) {
   return <path data-draw data-roof={sh.roof ? "" : undefined} pathLength={1} d={sh.d} className={styles[`k_${sh.kind}`]} />;
 }
 
-function Scene() {
+function Scene({ beat }: { beat?: number }) {
   return (
     <div className={styles.scene}>
       <svg data-world className={styles.world} viewBox="0 0 640 560" role="img" aria-label={`A service-area street; ${home.address} highlighted`}>
@@ -191,6 +191,15 @@ function Scene() {
           TODAY
         </text>
       </svg>
+
+      {beat !== undefined && (
+        <div className={styles.mobileSceneNotes} aria-label="Illustration details">
+          {beat === 0 && <span>Service area · Texas</span>}
+          {beat === 1 && <><span className={styles.noteVerified}>Verified data</span><strong>Recorded HVAC replacement · {home.permitDate}</strong></>}
+          {beat === 2 && <div className={styles.mobileTimelineNotes}><span>2012</span><strong>{YEARS} years since last HVAC replacement</strong><span>Time to reach out</span><span>Today</span></div>}
+          {beat === 3 && <><span className={styles.noteVerified}>ResponseHVAC opportunity view</span><strong>{home.address} · TX {home.zip}</strong></>}
+        </div>
+      )}
 
       {/* Beat 5: the customer's view, in the product's own UI. */}
       <div className={styles.panelWrap}>
@@ -383,7 +392,7 @@ function StackedBeat({ i, reduced }: { i: number; reduced: boolean }) {
     <section ref={ref} className={styles.stackBeat}>
       <Beat i={i} first={i === 0} />
       <div data-scene-root className={styles.stackScene}>
-        <Scene />
+        <Scene beat={i} />
       </div>
     </section>
   );

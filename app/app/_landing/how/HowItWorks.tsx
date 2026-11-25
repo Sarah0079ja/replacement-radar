@@ -321,7 +321,7 @@ export function HowItWorks() {
         <li>
           <span>02</span>
           <strong>Weigh the evidence</strong>
-          <p>Stronger opportunities rise first — and you see why each one stands out.</p>
+          <p>Stronger opportunities rise first. You see why each one stands out.</p>
         </li>
         <li>
           <span>03</span>

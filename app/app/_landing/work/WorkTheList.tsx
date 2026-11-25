@@ -128,7 +128,7 @@ export function WorkTheList() {
             to outcome.
           </h2>
           <p data-intro className={styles.lede}>
-            Keep every property moving — from first contact to appointment to won.
+            Keep every property moving from first contact to appointment to won.
           </p>
         </div>
 

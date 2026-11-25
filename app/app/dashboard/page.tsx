@@ -716,7 +716,7 @@ function HomeContent() {
         <div className="workspace-label">WORKSPACE</div>
         <div className="workspace-switcher"><span className="workspace-dot" /> {supabase ? workspaceName : "Demo workspace"}</div>
         <nav aria-label="Primary navigation" className="primary-nav">
-          {supabase && <button className={`nav-item ${view === "this-week" ? "nav-active" : ""}`} onClick={() => setView("this-week")}>▸ This Week <span className="nav-count">{cohort?.actual_size ?? "—"}</span></button>}
+          {supabase && <button className={`nav-item ${view === "this-week" ? "nav-active" : ""}`} onClick={() => setView("this-week")}>▸ This Week <span className="nav-count">{cohort?.actual_size ?? "0"}</span></button>}
           <button className={`nav-item ${view === "opportunities" ? "nav-active" : ""}`} onClick={() => setView("opportunities")}>≡ All Opportunities <span className="nav-count">{filtered.length}</span></button>
           {supabase && <button className="nav-item" onClick={() => router.push("/direct-mail")}>✉ Direct Mail</button>}
           {supabase && <button className="nav-item" onClick={() => router.push("/settings")}>⚙ Settings</button>}
@@ -1041,7 +1041,7 @@ function HvacTimeline({ property }: { property: Property }) {
     <div className="hvac-timeline">
       <div className="timeline-event">
         <span className="timeline-year">{eventYear}</span>
-        <span className="timeline-divider">—</span>
+        <span className="timeline-divider">→</span>
         <span className="timeline-desc">{eventLabel}</span>
       </div>
       <div className="timeline-gap-row">
@@ -1050,7 +1050,7 @@ function HvacTimeline({ property }: { property: Property }) {
       </div>
       <div className="timeline-event timeline-present">
         <span className="timeline-year">{CURRENT_YEAR}</span>
-        <span className="timeline-divider">—</span>
+        <span className="timeline-divider">→</span>
         <span className="timeline-desc">present</span>
       </div>
       <p className="timeline-note">

@@ -29,7 +29,7 @@ type SenderSettings = {
 function buildSavedMessage(result: ExpansionResult) {
   if (result.reason === "NO_CURRENT_COHORT") return "Settings saved. Your new target applies when you open This Week.";
   if (result.reason === "NO_SERVICE_AREA") return "Settings saved. Add ZIP codes to your service area to generate prospects.";
-  if ((result.newly_added || 0) > 0 && result.cohort?.pool_exhausted) return `Settings saved. ${result.newly_added} new prospects added — that's all available in your area right now.`;
+  if ((result.newly_added || 0) > 0 && result.cohort?.pool_exhausted) return `Settings saved. ${result.newly_added} new prospects added. That is all available in your area right now.`;
   if ((result.newly_added || 0) > 0) return `Settings saved. ${result.newly_added} new prospects added to this week.`;
   return "Settings saved.";
 }

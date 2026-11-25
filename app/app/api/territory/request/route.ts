@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       status: "REVIEW_REQUIRED",
     });
     if (error) throw error;
-    return NextResponse.json({ message: "Thanks — we received your territory request and will review it." });
+    return NextResponse.json({ message: "Thanks. We received your territory request and will review it." });
   } catch {
     return NextResponse.json({ error: "We could not record that request. Please try again." }, { status: 500 });
   }

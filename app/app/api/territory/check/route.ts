@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       status: supported ? "SUPPORTED" : "REVIEW_REQUIRED",
       zips,
       message: supported
-        ? "Great — we can serve this territory."
+        ? "Great. We can serve this territory."
         : "Let's check your territory. We may be able to activate ResponseHVAC for your service area. Send us your ZIP codes and we'll review the available property and HVAC data.",
     });
   } catch {

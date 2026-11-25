@@ -164,7 +164,7 @@ export function HeroFilm() {
         </h1>
         <p className={styles.lede}>
           ResponseHVAC uses available property and HVAC-related information to surface the homes in your territory
-          worth a closer look — with the evidence behind each one.
+          worth a closer look, with the evidence behind each one.
         </p>
         <div className={styles.actions}>
           <Link href="/territory" className={styles.primary}>
