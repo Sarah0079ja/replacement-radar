@@ -197,7 +197,7 @@ function downloadCsv(rows: Property[], statusFor: (parcel: string) => Status) {
     headers.join(","),
     ...rows.map((row) =>
       [
-        row.address, row.city, row.property_zip, priorityLabel(row.opportunity_strength), row.latest_permit_date,
+        row.address, propertyCity(row), row.property_zip, priorityLabel(row.opportunity_strength), row.latest_permit_date,
         hvacEventLabel(row), row.last_known_hvac_event_year,
         row.estimated_years_since_last_known_hvac_event,
         row.year_built, (row as EnrichedProperty).living_area_sqft ?? "",
