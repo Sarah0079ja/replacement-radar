@@ -117,10 +117,16 @@ export function mountSpotlightHeader(
   };
 
   const measure = () => {
-    layout(
-      s,
-      probes.map((p) => p.offsetWidth),
-    );
+    const measuredWidths = probes.map((p) => p.offsetWidth);
+    if (compactQuery.matches) {
+      const targetWidth = Math.min(window.innerWidth * 0.94, 440);
+      const targetDesignWidth = targetWidth / 0.86;
+      const equalTabWidth =
+        (targetDesignWidth - 6 - 4 - (measuredWidths.length - 1) * 2) / measuredWidths.length;
+      layout(s, measuredWidths.map(() => equalTabWidth));
+    } else {
+      layout(s, measuredWidths);
+    }
     css(bar, "--x", barLeft(s));
     css(bar, "--w", s.BW);
     tabs.forEach((tab, i) => {
