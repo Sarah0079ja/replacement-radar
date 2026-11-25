@@ -326,7 +326,7 @@ export function HowItWorks() {
         <li>
           <span>03</span>
           <strong>Work the list</strong>
-      <p>50, 100 or 250 homes a week. Mark them Contacted, Appointment, Won.</p>
+      <p>50, 100 or 250+ homes a week. Mark them Contacted, Appointment, Won.</p>
         </li>
       </ol>
     </section>

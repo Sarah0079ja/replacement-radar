@@ -244,8 +244,7 @@
   flex: none;
 }
 
-/* Phones: icons only (each link keeps its name through aria-label); the probe hides labels too, so the bar measures
-   the same layout it shows. */
+/* Phones keep the same floating bar, but retain compact visible labels so the icon meanings are clear without hover. */
 @media (max-width: 720px) {
   .header {
     --u: 0.86px;
@@ -253,12 +252,21 @@
   }
 
   .label {
-    display: none;
+    display: inline;
   }
 
   .tab,
   .probeTab {
-    gap: 0;
+    gap: 5px;
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 11px;
+  }
+
+  .icon,
+  .probeIcon {
+    width: 15px;
+    height: 15px;
   }
 
   .wordmarkText {

@@ -190,7 +190,7 @@ export function PricingHero({ howHref, level = "h1" }: { howHref: string; level?
         </div>
         <div className={styles.body}>
           <p className={styles.lede}>
-            50, 100 or 250 prioritized homes in the ZIP codes your team serves, refreshed every week.
+            50, 100 or 250+ prioritized homes in the ZIP codes your team serves, refreshed every week.
           </p>
           <p className={styles.proof}>Property context. Recorded HVAC history. Evidence you can check.</p>
         </div>
@@ -221,7 +221,7 @@ export function PricingHero({ howHref, level = "h1" }: { howHref: string; level?
           <div data-list className={styles.list}>
             <p data-label className={styles.listLabel}>
               <span>This week</span>
-              <span>50 / 100 / 250</span>
+              <span>50 / 100 / 250+</span>
             </p>
             <ol>
               {ROWS.map((len, i) => (

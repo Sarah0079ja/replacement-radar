@@ -448,6 +448,11 @@
 
   .world .note {
     font-size: 16px;
+    transform: translateY(4px);
+  }
+
+  .world .smallInference {
+    transform: translateY(-3px);
   }
 
   .world .recordSmall {
