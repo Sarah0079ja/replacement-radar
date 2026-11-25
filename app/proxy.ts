@@ -11,7 +11,7 @@ function hasCompletedSetup(workspace: { onboarding_completed_at: string | null; 
 
 async function billingRedirect(request: NextRequest, response: NextResponse, userId: string, path: string) {
   if (process.env.BILLING_ENFORCEMENT_ENABLED !== "true") return null;
-  const client = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: { getAll: () => request.cookies.getAll(), setAll: () => undefined } });
+  const client = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookieOptions: { secure: process.env.NODE_ENV === "production" }, cookies: { getAll: () => request.cookies.getAll(), setAll: () => undefined } });
   const { data: membership } = await client.from("memberships").select("workspace_id").eq("user_id", userId).order("created_at", { ascending: true }).limit(1).maybeSingle();
   if (!membership?.workspace_id) return NextResponse.redirect(new URL("/checkout", request.url));
   const { data: workspace, error } = await client.from("workspaces").select("subscription_status,onboarding_completed_at,service_zip_codes").eq("id", membership.workspace_id).single();
@@ -28,7 +28,7 @@ async function billingRedirect(request: NextRequest, response: NextResponse, use
 
 async function onboardingRedirect(request: NextRequest, userId: string, path: string) {
   if (path !== "/dashboard") return null;
-  const client = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: { getAll: () => request.cookies.getAll(), setAll: () => undefined } });
+  const client = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookieOptions: { secure: process.env.NODE_ENV === "production" }, cookies: { getAll: () => request.cookies.getAll(), setAll: () => undefined } });
   const { data: membership } = await client.from("memberships").select("workspace_id").eq("user_id", userId).order("created_at", { ascending: true }).limit(1).maybeSingle();
   if (!membership?.workspace_id) return null;
   const { data: workspace } = await client.from("workspaces").select("service_zip_codes,onboarding_completed_at").eq("id", membership.workspace_id).single();
@@ -39,7 +39,7 @@ async function onboardingRedirect(request: NextRequest, userId: string, path: st
 export async function proxy(request: NextRequest) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return NextResponse.next();
   let response = NextResponse.next({ request });
-  const client = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { cookies: { getAll: () => request.cookies.getAll(), setAll: (values) => values.forEach(({ name, value, options }) => { request.cookies.set(name, value); response = NextResponse.next({ request }); response.cookies.set(name, value, options); }) } });
+  const client = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, { cookieOptions: { secure: process.env.NODE_ENV === "production" }, cookies: { getAll: () => request.cookies.getAll(), setAll: (values) => values.forEach(({ name, value, options }) => { request.cookies.set(name, value); response = NextResponse.next({ request }); response.cookies.set(name, value, options); }) } });
   const { data: { user } } = await client.auth.getUser();
   const path = request.nextUrl.pathname;
   const isAdminPath = path === "/admin" || path.startsWith("/admin/");
