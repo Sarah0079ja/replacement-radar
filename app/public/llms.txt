@@ -1,0 +1,37 @@
+# ResponseHVAC
+
+> Know which homes to work first.
+
+## Product
+
+ResponseHVAC is software for HVAC contractors. It helps HVAC contractors identify residential properties that may be worth contacting for HVAC replacement opportunities.
+
+The current launch and validated market is Dallas, Texas. Dallas is the initial launch market and is not necessarily a permanent geographic limitation.
+
+## What customers can do
+
+- Configure a service area.
+- View property opportunities.
+- View evidence explaining why a property may be worth contacting.
+- Filter opportunities.
+- Inspect property details.
+- Manage opportunity and lead status.
+- Export filtered opportunities to CSV.
+
+ResponseHVAC provides prospecting information and prioritization support. Property and HVAC evidence can be incomplete or outdated and does not establish that a property requires HVAC replacement.
+
+Live Direct Mail fulfillment is not currently enabled.
+
+## Commercial terms
+
+- Price: $99/month.
+- Trial: 5-day free trial.
+
+## Public information
+
+- Homepage: https://responsehvac.com/
+- Pricing: https://responsehvac.com/pricing
+- How ResponseHVAC works: https://responsehvac.com/how-we-know
+- Privacy Policy: https://responsehvac.com/privacy
+- Terms of Service: https://responsehvac.com/terms
+- Customer support: mailto:support@responsehvac.com
